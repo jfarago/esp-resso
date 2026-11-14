@@ -49,6 +49,20 @@ static void onModeEnter(Mode m) {
   }
 }
 
+// Uptime as HH:MM:SS (hours keep counting past 24). No wall clock: there is no NTP on this board.
+static void logBattery(uint32_t now) {
+  static uint32_t lastMs = 0;
+  static bool logged = false;
+  if (logged && now - lastMs < VBAT_LOG_MS) return;
+  if (battery::volts() < 0) return;  // no sample yet
+  logged = true;
+  lastMs = now;
+  uint32_t s = now / 1000;
+  netlog::out.printf("[%02lu:%02lu:%02lu] [battery] %.2f V%s\n", (unsigned long)(s / 3600),
+                     (unsigned long)(s / 60 % 60), (unsigned long)(s % 60), battery::volts(),
+                     battery::present() ? "" : " (no battery detected)");
+}
+
 static void updateMode() {
   if (!battery::present()) return;
   float v = battery::volts();
@@ -72,9 +86,8 @@ void setup() {
   bc.samples = VBAT_SAMPLES;
   bc.sampleMs = VBAT_SAMPLE_MS;
   bc.smoothAlpha = VBAT_SMOOTH_ALPHA;
-  bc.logMs = VBAT_LOG_MS;
+  bc.logMs = 0;  // main.cpp logs the battery itself (with a timestamp)
   bc.presentMinV = VBAT_PRESENT_MIN_V;
-  bc.out = &netlog::out;
   battery::begin(bc);
   net::begin();
 }
@@ -86,6 +99,7 @@ void loop() {
   netlog::loop();
   battery::update(now);
   updateMode();
+  logBattery(now);
   // Non-blocking 1 Hz blink so OTA stays responsive.
   digitalWrite(LED_BUILTIN, (now / 500) % 2 == 0 ? LED_ON : LED_OFF);
 }
