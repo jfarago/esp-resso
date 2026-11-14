@@ -22,7 +22,7 @@ C6 notes: avoid GPIO3 (RF switch power) and GPIO14 (antenna select); GPIO4/5/8/9
 - Always pipe build/monitor output through `tail`/`grep`.
 
 ## Layout
-`src/` firmware, `include/config.h` pins/defaults, `include/secrets.h` (gitignored, copy from `secrets.example.h`), `ui/` production dashboard (vanilla HTML/CSS/JS), `scripts/` (`build_ui.py` gzips `ui/` into `data/` on every build; `mock_server.py` serves `ui/` with fake data at localhost:8080), `data/` generated gzipped UI (gitignored), `test/` host unit tests, `web/` design mockup (reference only), `docs/`.
+`src/` firmware (battery monitoring is the shared `../lib/battery` library, configured in `main.cpp` from `config.h`), `include/config.h` pins/defaults, `include/secrets.h` (gitignored, copy from `secrets.example.h`), `ui/` production dashboard (vanilla HTML/CSS/JS), `scripts/` (`build_ui.py` gzips `ui/` into `data/` on every build; `mock_server.py` serves `ui/` with fake data at localhost:8080), `data/` generated gzipped UI (gitignored), `test/` host unit tests, `web/` design mockup (reference only), `docs/`.
 
 ## Rules
 - **Waste = in − out** (GPIO0 minus GPIO2), clamped at >= 0. Total = in, clean = out.

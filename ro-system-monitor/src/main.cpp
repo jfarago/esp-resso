@@ -217,7 +217,16 @@ void setup() {
   clk::begin();
   store::begin();
   tds::begin();
-  battery::begin();
+  battery::Config bc;
+  bc.pin = PIN_VBAT;
+  bc.divider = VBAT_DIVIDER;
+  bc.cal = VBAT_CAL;
+  bc.samples = VBAT_SAMPLES;
+  bc.sampleMs = VBAT_SAMPLE_MS;
+  bc.smoothAlpha = VBAT_SMOOTH_ALPHA;
+  bc.logMs = VBAT_LOG_MS;
+  bc.presentMinV = VBAT_PRESENT_MIN_V;
+  battery::begin(bc);
   flow::begin();
   net::begin();
   web::begin();
