@@ -1,6 +1,8 @@
 #include <Arduino.h>
 #include <battery.h>
 #include "config.h"
+#include "net.h"
+#include "ota.h"
 
 // XIAO ESP32-C6 user LED (GPIO15) is active-low; LED_BUILTIN comes from the board variant.
 static const uint8_t LED_ON = LOW;
@@ -72,13 +74,15 @@ void setup() {
   bc.logMs = VBAT_LOG_MS;
   bc.presentMinV = VBAT_PRESENT_MIN_V;
   battery::begin(bc);
+  net::begin();
 }
 
 void loop() {
-  battery::update(millis());
+  uint32_t now = millis();
+  net::loop(now);
+  ota::loop();
+  battery::update(now);
   updateMode();
-  digitalWrite(LED_BUILTIN, LED_ON);
-  delay(500);
-  digitalWrite(LED_BUILTIN, LED_OFF);
-  delay(500);
+  // Non-blocking 1 Hz blink so OTA stays responsive.
+  digitalWrite(LED_BUILTIN, (now / 500) % 2 == 0 ? LED_ON : LED_OFF);
 }

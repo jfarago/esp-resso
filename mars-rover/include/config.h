@@ -19,3 +19,8 @@ constexpr float MODE_DRIVE_MIN_V = 3.6f;       // Sun-seek -> Drive at or above 
 constexpr float MODE_SEEK_BELOW_V = 3.5f;      // Drive -> Sun-seek below this
 constexpr float MODE_SLEEP_BELOW_V = 3.3f;     // placeholder: any mode -> Deep-sleep charge below this
 constexpr float MODE_SLEEP_EXIT_V = 3.4f;      // placeholder: Deep-sleep -> Sun-seek at or above this
+
+// Wi-Fi / OTA (credentials and OTA password live in secrets.h)
+#define MDNS_HOSTNAME "mars-rover"
+constexpr uint32_t WIFI_RETRY_MIN_MS = 10000;  // reconnect backoff 10 s, 20 s, 40 s, capped at 60 s
+constexpr uint32_t WIFI_RETRY_MAX_MS = 60000;
