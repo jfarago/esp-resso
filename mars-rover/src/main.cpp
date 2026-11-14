@@ -26,9 +26,7 @@ void setup() {
 void loop() {
   battery::update(millis());
   digitalWrite(LED_BUILTIN, LED_ON);
-  Serial.println("LED on");
   delay(500);
   digitalWrite(LED_BUILTIN, LED_OFF);
-  Serial.println("LED off");
   delay(500);
 }

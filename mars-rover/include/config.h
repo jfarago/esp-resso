@@ -11,5 +11,5 @@ constexpr float VBAT_CAL = 1.0099f;         // copied from ro-system-monitor; re
 constexpr int VBAT_SAMPLES = 16;
 constexpr uint32_t VBAT_SAMPLE_MS = 1000;
 constexpr float VBAT_SMOOTH_ALPHA = 0.2f;
-constexpr uint32_t VBAT_LOG_MS = 60000;
+constexpr uint32_t VBAT_LOG_MS = 30000;
 constexpr float VBAT_PRESENT_MIN_V = 2.0f;
