@@ -2,7 +2,7 @@
 
 Goal: cut average current as far as possible while the dashboard stays reachable over Wi-Fi at any time. A 5–10 s delay on first page load is acceptable, so the Wi-Fi radio can sleep between beacons instead of listening all the time.
 
-Branch: `battery-and-low-power-states`. Hardware: `docs/hardware.md`. Board: `../docs/xiao-esp32c6.md`.
+Branch: `battery-and-low-power-states`. Hardware: `ro-system-monitor/docs/hardware.md`. Board: `docs/xiao-esp32c6.md`. This plan was written for ro-system-monitor; the `src/`, `include/` and `config.h` paths below refer to that project.
 
 ## 1. Where the power goes today
 
@@ -82,7 +82,7 @@ Goal: the CPU sleeps between Wi-Fi beacons and between flow pulses. This is what
 
 ### Phase 5: Hardware options (optional)
 - [ ] Switch the TDS module's power from a free GPIO or a load switch so it is on only while measuring. Needs a spare pin that is not strapping, GPIO3 or GPIO14.
-- [ ] Look at the flow sensors: a lower-current type, or powering them at the lowest rated voltage (3.3–5 V range depends on the part; check the datasheet in `docs/hardware.md`). Do not change the signal level without re-doing the §2.1 voltage check in PLAN.
+- [ ] Look at the flow sensors: a lower-current type, or powering them at the lowest rated voltage (3.3–5 V range depends on the part; check the datasheet in `ro-system-monitor/docs/hardware.md`). Do not change the signal level without re-doing the §2.1 voltage check in `ro-system-monitor/docs/PLAN.md`.
 - [ ] Charger and boost efficiency: if the 5 V rail comes from a boost converter, check its quiescent current and efficiency at light load.
 
 ## 4. Risks
