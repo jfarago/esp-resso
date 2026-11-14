@@ -6,6 +6,7 @@ Monorepo for my ESP32 projects. Each project is a self-contained PlatformIO proj
 |---|---|
 | [ro-system-monitor](ro-system-monitor/) | RO system monitor |
 | [mars-rover](mars-rover/) | Mars rover |
+| [word-clock](word-clock/) | Word clock |
 
 ## Building
 

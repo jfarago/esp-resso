@@ -1,0 +1,125 @@
+// GENERATED FILE - do not edit directly.
+// Regenerate with scripts/generate_arduino_sketch.sh after editing src/words.cpp.
+
+#include "words.h"
+#include "config.h"
+
+// The strip is wired as a serpentine (boustrophedon) matrix: it starts at
+// the bottom-left of the clock and snakes upward, alternating direction
+// every row. Words below are specified by their position in the *text*
+// grid (row 0 = top row, col 0 = leftmost letter in that row), which is
+// how the physical layout was measured, and translated to the actual
+// wiring index by stripIndex().
+struct Word {
+  uint8_t row;       // 0 = top row of the text grid
+  uint8_t colStart;  // 0 = leftmost letter in the row
+  uint8_t length;
+  const char *name;
+};
+
+static const CRGB WORD_COLOR = CRGB::White;
+
+// Row 0 (bottom-most physically, first on the strip) runs left-to-right;
+// direction alternates for each row above it.
+uint16_t wordGridStripIndex(int row, int col) {
+  int physicalRowFromBottom = WORD_GRID_ROWS - 1 - row;
+  int rowStart = physicalRowFromBottom * WORD_GRID_COLS;
+  bool leftToRight = (physicalRowFromBottom % 2) == 0;
+  int withinRow = leftToRight ? col : (WORD_GRID_COLS - 1 - col);
+  return rowStart + withinRow;
+}
+
+static void lightWord(CRGB *leds, const Word &w, String &phrase) {
+  for (uint8_t i = 0; i < w.length; i++) {
+    leds[wordGridStripIndex(w.row, w.colStart + i)] = WORD_COLOR;
+  }
+  if (phrase.length() > 0) phrase += ' ';
+  phrase += w.name;
+}
+
+static const Word W_IT_IS = {0, 0, 4, "IT IS"};
+static const Word W_HALF = {0, 4, 7, "HALF"};
+static const Word W_TEN_MIN = {0, 11, 4, "TEN"};
+static const Word W_QUARTER = {1, 0, 8, "QUARTER"};
+static const Word W_TWENTY = {1, 8, 7, "TWENTY"};
+static const Word W_FIVE_MIN = {2, 0, 4, "FIVE"};
+static const Word W_MINUTES = {2, 4, 8, "MINUTES"};
+static const Word W_TO = {2, 12, 3, "TO"};
+static const Word W_PAST = {3, 0, 4, "PAST"};
+static const Word W_OCLOCK = {7, 7, 8, "O'CLOCK"};
+
+// Indexed by hour value (0 = twelve, 1 = one, ... 11 = eleven), not by the
+// words' physical/wiring order on the strip.
+static const Word HOUR_WORDS[12] = {
+    {7, 0, 7, "TWELVE"},
+    {3, 4, 6, "ONE"},
+    {4, 0, 4, "TWO"},
+    {3, 10, 5, "THREE"},
+    {4, 4, 7, "FOUR"},
+    {4, 11, 4, "FIVE"},
+    {5, 0, 3, "SIX"},
+    {5, 3, 7, "SEVEN"},
+    {5, 10, 5, "EIGHT"},
+    {6, 0, 4, "NINE"},
+    {6, 4, 5, "TEN"},
+    {6, 9, 6, "ELEVEN"},
+};
+
+// Every word that can ever appear, fixed phrase words followed by the 12
+// hour words. Exposed for effects that light up "some word" without regard
+// to what time it is (e.g. the boot sparkle animation).
+static const Word *const FIXED_WORDS[] = {
+    &W_IT_IS, &W_HALF, &W_TEN_MIN, &W_QUARTER, &W_TWENTY,
+    &W_FIVE_MIN, &W_MINUTES, &W_TO, &W_PAST, &W_OCLOCK,
+};
+static const int FIXED_WORD_COUNT = sizeof(FIXED_WORDS) / sizeof(FIXED_WORDS[0]);
+
+int wordRegionCount() {
+  return FIXED_WORD_COUNT + 12;
+}
+
+void wordRegionAt(int index, int &row, int &colStart, int &length) {
+  const Word *w = index < FIXED_WORD_COUNT ? FIXED_WORDS[index] : &HOUR_WORDS[index - FIXED_WORD_COUNT];
+  row = w->row;
+  colStart = w->colStart;
+  length = w->length;
+}
+
+void renderTimeToWords(CRGB *leds, int hour24, int minute, String &phrase) {
+  phrase = "";
+  lightWord(leds, W_IT_IS, phrase);
+
+  int displayHour = hour24 % 12;
+  // The caller renders time slightly ahead of actual, so just floor to the
+  // nearest 5-minute word; hour rollover at :00 is already reflected in
+  // hour24.
+  int minuteBlock = (minute / 5) * 5;
+  bool showNextHour = false;
+
+  if (minuteBlock == 0) {
+    lightWord(leds, W_OCLOCK, phrase);
+  } else if (minuteBlock == 30) {
+    lightWord(leds, W_HALF, phrase);
+    lightWord(leds, W_PAST, phrase);
+  } else {
+    bool isPast = minuteBlock < 30;
+    int distance = isPast ? minuteBlock : 60 - minuteBlock;
+
+    switch (distance) {
+      case 5: lightWord(leds, W_FIVE_MIN, phrase); lightWord(leds, W_MINUTES, phrase); break;
+      case 10: lightWord(leds, W_TEN_MIN, phrase); lightWord(leds, W_MINUTES, phrase); break;
+      case 15: lightWord(leds, W_QUARTER, phrase); break;
+      case 20: lightWord(leds, W_TWENTY, phrase); lightWord(leds, W_MINUTES, phrase); break;
+      case 25:
+        lightWord(leds, W_TWENTY, phrase);
+        lightWord(leds, W_FIVE_MIN, phrase);
+        lightWord(leds, W_MINUTES, phrase);
+        break;
+    }
+    lightWord(leds, isPast ? W_PAST : W_TO, phrase);
+    showNextHour = !isPast; // "to" phrasing names the upcoming hour
+  }
+
+  int hourIndex = (showNextHour ? (displayHour + 1) : displayHour) % 12;
+  lightWord(leds, HOUR_WORDS[hourIndex], phrase);
+}
