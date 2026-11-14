@@ -24,3 +24,7 @@ constexpr float MODE_SLEEP_EXIT_V = 3.4f;      // placeholder: Deep-sleep -> Sun
 #define MDNS_HOSTNAME "mars-rover"
 constexpr uint32_t WIFI_RETRY_MIN_MS = 10000;  // reconnect backoff 10 s, 20 s, 40 s, capped at 60 s
 constexpr uint32_t WIFI_RETRY_MAX_MS = 60000;
+
+// Wi-Fi log mirror: `nc mars-rover.local 23`
+constexpr uint16_t LOG_TCP_PORT = 23;
+constexpr size_t LOG_BACKLOG_BYTES = 4096;  // history replayed to a new client

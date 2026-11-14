@@ -3,6 +3,7 @@
 #include <ESPmDNS.h>
 #include <WiFi.h>
 #include "config.h"
+#include "netlog.h"
 #include "secrets.h"
 
 namespace net {
@@ -13,7 +14,7 @@ static uint32_t nextAttemptMs = 0;
 static uint32_t backoffMs = WIFI_RETRY_MIN_MS;
 
 static void attempt(uint32_t now) {
-  Serial.printf("[net] connecting to \"%s\" (next retry in %lu s)\n", WIFI_SSID,
+  netlog::out.printf("[net] connecting to \"%s\" (next retry in %lu s)\n", WIFI_SSID,
                 (unsigned long)(backoffMs / 1000));
   WiFi.disconnect(false, false);
   WiFi.begin(WIFI_SSID, WIFI_PASSWORD);
@@ -32,15 +33,15 @@ void begin() {
 void loop(uint32_t now) {
   bool up = WiFi.status() == WL_CONNECTED;
   if (up && !wasConnected) {
-    Serial.printf("[net] connected, IP %s, RSSI %d dBm\n", WiFi.localIP().toString().c_str(),
+    netlog::out.printf("[net] connected, IP %s, RSSI %d dBm\n", WiFi.localIP().toString().c_str(),
                   WiFi.RSSI());
     backoffMs = WIFI_RETRY_MIN_MS;
     if (!mdnsUp && MDNS.begin(MDNS_HOSTNAME)) {
       mdnsUp = true;
-      Serial.printf("[net] mDNS %s.local\n", MDNS_HOSTNAME);
+      netlog::out.printf("[net] mDNS %s.local\n", MDNS_HOSTNAME);
     }
   } else if (!up && wasConnected) {
-    Serial.println("[net] Wi-Fi lost");
+    netlog::out.println("[net] Wi-Fi lost");
     nextAttemptMs = now + 1000;  // first retry quickly, then back off
   }
   wasConnected = up;

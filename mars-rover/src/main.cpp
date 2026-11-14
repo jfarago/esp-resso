@@ -2,6 +2,7 @@
 #include <battery.h>
 #include "config.h"
 #include "net.h"
+#include "netlog.h"
 #include "ota.h"
 
 // XIAO ESP32-C6 user LED (GPIO15) is active-low; LED_BUILTIN comes from the board variant.
@@ -41,9 +42,9 @@ static Mode nextMode(Mode cur, float v) {
 // Stub: real behavior comes with the hardware. For now just log what the mode would do.
 static void onModeEnter(Mode m) {
   switch (m) {
-    case Mode::Drive: Serial.println("[mode] would accept remote commands / explore"); break;
-    case Mode::SunSeek: Serial.println("[mode] would steer toward the brighter light sensor"); break;
-    case Mode::DeepSleepCharge: Serial.println("[mode] would stop motors and deep sleep, waking periodically to check battery"); break;
+    case Mode::Drive: netlog::out.println("[mode] would accept remote commands / explore"); break;
+    case Mode::SunSeek: netlog::out.println("[mode] would steer toward the brighter light sensor"); break;
+    case Mode::DeepSleepCharge: netlog::out.println("[mode] would stop motors and deep sleep, waking periodically to check battery"); break;
     default: break;
   }
 }
@@ -54,7 +55,7 @@ static void updateMode() {
   if (v < 0) return;
   Mode next = nextMode(mode, v);
   if (next == mode) return;
-  Serial.printf("[mode] %s -> %s (%.2f V)\n", modeName(mode), modeName(next), v);
+  netlog::out.printf("[mode] %s -> %s (%.2f V)\n", modeName(mode), modeName(next), v);
   mode = next;
   onModeEnter(mode);
 }
@@ -73,6 +74,7 @@ void setup() {
   bc.smoothAlpha = VBAT_SMOOTH_ALPHA;
   bc.logMs = VBAT_LOG_MS;
   bc.presentMinV = VBAT_PRESENT_MIN_V;
+  bc.out = &netlog::out;
   battery::begin(bc);
   net::begin();
 }
@@ -81,6 +83,7 @@ void loop() {
   uint32_t now = millis();
   net::loop(now);
   ota::loop();
+  netlog::loop();
   battery::update(now);
   updateMode();
   // Non-blocking 1 Hz blink so OTA stays responsive.

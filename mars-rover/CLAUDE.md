@@ -7,6 +7,7 @@ Firmware for a Mars rover on a Seeed XIAO ESP32-C6 (PlatformIO, Arduino framewor
 - Build: `pio run 2>&1 | tail -20`
 - Flash: `pio run -t upload 2>&1 | tail -20`
 - Serial monitor: `pio device monitor 2>&1 | grep -v '^$' | tail -50` (or run with a timeout)
+- Serial over Wi-Fi: `nc mars-rover.local 23` (all logs go through `netlog::out`, not `Serial`; replays the last 4 KB)
 - Always pipe build/monitor output through `tail`/`grep`.
 
 ## Layout
