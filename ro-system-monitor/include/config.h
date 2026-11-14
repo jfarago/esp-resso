@@ -1,0 +1,72 @@
+#pragma once
+#include <stdint.h>
+
+// Pins (XIAO ESP32-C6: GPIO0 = D0, GPIO1 = D1, GPIO2 = D2)
+constexpr int PIN_FLOW_IN = 0;   // water IN (total feed)
+constexpr int PIN_TDS = 1;       // product TDS probe, ADC1_CH1
+constexpr int PIN_FLOW_OUT = 2;  // water OUT (clean RO)
+constexpr int PIN_VBAT = 6;      // battery divider midpoint, GPIO6 (MTCK pad on the back), ADC1_CH6
+
+// Battery: BAT+ -> 220k -> PIN_VBAT -> 220k -> GND (ratio 2). A 100 nF cap from PIN_VBAT to GND
+// steadies the ADC reading, since 110k of source impedance is high for the sample-and-hold.
+constexpr float VBAT_DIVIDER = 2.0f;
+constexpr float VBAT_CAL = 1.0099f;           // 4.10 V multimeter / 4.06 V reading; re-tune if it drifts
+constexpr int VBAT_SAMPLES = 16;               // ADC reads averaged per sample
+constexpr uint32_t VBAT_SAMPLE_MS = 1000;
+constexpr float VBAT_SMOOTH_ALPHA = 0.2f;
+constexpr uint32_t VBAT_LOG_MS = 60000;        // serial log interval
+constexpr float VBAT_PRESENT_MIN_V = 2.0f;     // below this, treat as no battery connected
+
+// Flow calibration: F(Hz) = 38 * Q(L/min) -> 2280 pulses/L
+constexpr float K_FLOW_IN_PER_GAL = 8631.0f;
+constexpr float K_FLOW_OUT_PER_GAL = 8389.0f;  // measured over a 1 gal fill
+constexpr uint32_t FLOW_DEBOUNCE_US = 2000;
+
+// TDS
+constexpr float FEED_TDS_PPM = 180.0f;
+constexpr float K_TDS = 1.0f;
+constexpr float WATER_TEMP_C = 25.0f;
+
+// Filter life defaults
+constexpr float PREFILTER_RATING_GAL = 1500.0f;
+constexpr float MEMBRANE_RATING_GAL = 3000.0f;
+#define MEMBRANE_COUNTS_TOTAL 1  // 1 = total (in), 0 = clean (out) only
+
+// Time (US Eastern, North Carolina)
+#define TZ_INFO "EST5EDT,M3.2.0,M11.1.0"
+#define NTP_SERVER_1 "pool.ntp.org"
+#define NTP_SERVER_2 "time.google.com"
+
+// Network
+#ifdef DEV_BUILD  // second board on the same network (pio -e dev / -e dev_ota)
+#define MDNS_HOSTNAME "ro-monitor-dev"
+#define FALLBACK_AP_SSID "RO-Monitor-Dev-Setup"
+#else
+#define MDNS_HOSTNAME "ro-monitor"
+#define FALLBACK_AP_SSID "RO-Monitor-Setup"
+#endif
+constexpr uint32_t WIFI_FALLBACK_AP_AFTER_MS = 120000;
+
+// Fallback AP password: define FALLBACK_AP_PASSWORD (8+ chars) in secrets.h for WPA2; open otherwise.
+constexpr uint32_t WIFI_RETRY_MIN_MS = 10000;  // reconnect backoff 10 s, 20 s, 40 s, capped at 60 s
+constexpr uint32_t WIFI_RETRY_MAX_MS = 60000;
+
+// Watchdog: loop() must come around within this, or the board reboots. Longest legit stall is an
+// MQTT connect (3 s socket timeout) or an NVS save; OTA transfers feed it explicitly.
+constexpr uint32_t WDT_TIMEOUT_S = 15;
+constexpr uint32_t WIFI_RADIO_RESET_MS = 600000;  // Wi-Fi down this long: restart the radio (never reboot)
+
+// Intervals
+constexpr uint32_t FLOW_SAMPLE_MS = 1000;
+constexpr uint32_t FLOW_ACTIVE_MS = 3000;      // "flowing" = pulses within this window
+constexpr uint32_t FLOW_EVENT_END_MS = 10000;  // no pulses this long ends a flow event (triggers a save)
+constexpr uint32_t TDS_SAMPLE_MS = 40;
+constexpr int TDS_SAMPLES = 30;
+constexpr uint32_t TDS_SMOOTH_TICK_MS = 1000;  // the median feeds the moving average this often
+constexpr float TDS_SMOOTH_ALPHA = 0.1f;       // ~10 s time constant; lower = smoother, slower to react
+constexpr uint32_t SAVE_INTERVAL_MS = 60000;   // max time unsaved changes are held in RAM
+constexpr uint32_t MQTT_PUBLISH_MS = 30000;    // periodic state publish
+constexpr uint32_t MQTT_MIN_GAP_MS = 2000;     // min spacing for change-triggered publishes
+constexpr uint32_t MQTT_RETRY_MIN_MS = 5000;   // broker reconnect backoff 5 s, 10 s, ... capped at 60 s
+constexpr uint32_t MQTT_RETRY_MAX_MS = 60000;
+constexpr uint16_t MQTT_BUFFER_BYTES = 1536;   // largest payload: the state JSON
