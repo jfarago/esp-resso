@@ -1,0 +1,7 @@
+{
+  "name": "battery",
+  "version": "1.0.0",
+  "description": "LiPo battery voltage monitor for ESP32 (ADC + resistor divider, smoothing, presence detect)",
+  "frameworks": "arduino",
+  "platforms": "espressif32"
+}

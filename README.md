@@ -20,3 +20,11 @@ Each project keeps its own `platformio.ini`, `.gitignore`, and `include/secrets.
 ## Shared docs
 
 [`docs/`](docs/) holds documentation shared across projects (e.g. [XIAO ESP32-C6 board notes](docs/xiao-esp32c6.md)). Project-specific hardware docs stay in each project's own `docs/`.
+
+## Shared libraries
+
+[`lib/`](lib/) holds PlatformIO libraries shared across projects. A project opts in with `lib_extra_dirs = ../lib` in its `platformio.ini`.
+
+| Library | Description |
+|---|---|
+| [battery](lib/battery/) | LiPo voltage monitor: ADC + resistor divider, smoothing, presence detect. Configured with a `battery::Config` struct. |

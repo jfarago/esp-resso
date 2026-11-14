@@ -4,6 +4,10 @@ Monorepo of ESP32 projects. Each top-level folder is a self-contained PlatformIO
 
 Projects: `ro-system-monitor`, `mars-rover`, `word-clock`.
 
+## Shared code
+
+`lib/` holds PlatformIO libraries shared across projects (currently `battery`). Projects use them via `lib_extra_dirs = ../lib` and pass their own pins/constants in at runtime; libraries must not include any project's `config.h`. Changes to `lib/` use scope `repo`, and verify every project that uses the library still builds.
+
 ## Commit messages
 
 Use [Conventional Commits](https://www.conventionalcommits.org/) with the **project name as the scope**:
