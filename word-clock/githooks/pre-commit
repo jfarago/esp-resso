@@ -5,8 +5,9 @@
 # included automatically.
 set -euo pipefail
 
-repo_root="$(git rev-parse --show-toplevel)"
-cd "$repo_root"
+# This project lives in a subfolder of the monorepo; run from its root.
+project_root="$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)"
+cd "$project_root"
 
 generated_files=(
   arduino/word_clock/word_clock.ino
