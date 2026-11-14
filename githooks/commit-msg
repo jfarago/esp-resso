@@ -1,0 +1,43 @@
+#!/usr/bin/env bash
+# Enforces "<type>(<scope>): <summary>" where scope is a project or "repo".
+# See CLAUDE.md ("Commit messages") for the full convention.
+set -euo pipefail
+
+msg_file="$1"
+subject="$(grep -v '^#' "$msg_file" | sed -n '1p')"
+
+# Let merge / revert / fixup commits through untouched.
+case "$subject" in
+  Merge\ *|Revert\ *|fixup!\ *|squash!\ *) exit 0 ;;
+esac
+
+repo_root="$(git rev-parse --show-toplevel)"
+projects=()
+for dir in "$repo_root"/*/; do
+  [ -f "${dir}platformio.ini" ] && projects+=("$(basename "$dir")")
+done
+scopes="repo"
+for p in "${projects[@]}"; do scopes="$scopes|$p"; done
+
+types="feat|fix|docs|refactor|perf|test|build|chore|style"
+pattern="^($types)\(($scopes)\)!?: [^A-Z].*[^.]$"
+
+if ! [[ "$subject" =~ $pattern ]]; then
+  cat >&2 <<MSG
+commit-msg: invalid commit message subject:
+  $subject
+
+Expected: <type>(<scope>): <lowercase imperative summary>
+  type:  ${types//|/, }
+  scope: ${scopes//|/, }
+  (no trailing period; add ! after the scope for breaking changes)
+
+Example: feat(word-clock): add rainbow boot animation
+MSG
+  exit 1
+fi
+
+if [ "${#subject}" -gt 72 ]; then
+  echo "commit-msg: subject is ${#subject} chars; keep it to 72 or fewer." >&2
+  exit 1
+fi

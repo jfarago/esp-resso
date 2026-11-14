@@ -1,0 +1,10 @@
+#!/usr/bin/env bash
+# Runs project-level pre-commit hooks for projects that have staged changes.
+set -euo pipefail
+
+repo_root="$(git rev-parse --show-toplevel)"
+cd "$repo_root"
+
+if git diff --cached --name-only | grep -q '^word-clock/'; then
+  word-clock/githooks/pre-commit
+fi
