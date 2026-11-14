@@ -27,4 +27,4 @@ Each project keeps its own `platformio.ini`, `.gitignore`, and `include/secrets.
 
 | Library | Description |
 |---|---|
-| [battery](lib/battery/) | LiPo voltage monitor: ADC + resistor divider, smoothing, presence detect. Configured with a `battery::Config` struct. Power-saving plan in [PLAN.md](lib/battery/PLAN.md). |
+| [battery](lib/battery/) | LiPo voltage monitor: ADC + resistor divider, smoothing, presence detect. Configured with a `battery::Config` struct. |
