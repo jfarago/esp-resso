@@ -1,5 +1,6 @@
 // LiPo battery voltage via a resistor divider on an ADC pin. Shared across projects.
 #pragma once
+#include <Print.h>
 #include <stdint.h>
 
 namespace battery {
@@ -13,6 +14,7 @@ struct Config {
   float smoothAlpha = 0.2f;        // EMA factor (1 = no smoothing)
   uint32_t logMs = 60000;          // serial log interval; 0 disables logging
   float presentMinV = 2.0f;        // below this, treat as no battery connected
+  Print* out = nullptr;            // log destination; nullptr = Serial
 };
 
 void begin(const Config& cfg);

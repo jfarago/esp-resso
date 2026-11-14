@@ -34,7 +34,7 @@ void update(uint32_t now) {
   if (cfg.logMs && (!logged || now - lastLogMs >= cfg.logMs)) {
     logged = true;
     lastLogMs = now;
-    Serial.printf("[battery] %.3f V%s\n", (float)smoothV, present() ? "" : " (no battery detected)");
+    (cfg.out ? *cfg.out : (Print&)Serial).printf("[battery] %.3f V%s\n", (float)smoothV, present() ? "" : " (no battery detected)");
   }
 }
 
