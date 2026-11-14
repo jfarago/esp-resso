@@ -16,3 +16,7 @@ pio run
 ```
 
 Each project keeps its own `platformio.ini`, `.gitignore`, and `include/secrets.h` (gitignored — create your own per project).
+
+## Shared docs
+
+[`docs/`](docs/) holds documentation shared across projects (e.g. [XIAO ESP32-C6 board notes](docs/xiao-esp32c6.md)). Project-specific hardware docs stay in each project's own `docs/`.

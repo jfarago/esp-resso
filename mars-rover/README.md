@@ -9,4 +9,4 @@ pio run -t upload    # flash over USB
 pio device monitor   # serial at 115200
 ```
 
-See `docs/hardware.md` and `docs/xiao-esp32c6.md`.
+See `docs/hardware.md` and `../docs/xiao-esp32c6.md`.

@@ -1,6 +1,6 @@
 # Mars Rover
 
-Firmware for a Mars rover on a Seeed XIAO ESP32-C6 (PlatformIO, Arduino framework via pioarduino). Hardware: `docs/hardware.md`. Board docs: `docs/xiao-esp32c6.md`.
+Firmware for a Mars rover on a Seeed XIAO ESP32-C6 (PlatformIO, Arduino framework via pioarduino). Hardware: `docs/hardware.md`. Board docs: `../docs/xiao-esp32c6.md`.
 
 ## Commands
 - Build: `pio run 2>&1 | tail -20`

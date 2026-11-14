@@ -2,7 +2,7 @@
 
 Goal: cut average current as far as possible while the dashboard stays reachable over Wi-Fi at any time. A 5–10 s delay on first page load is acceptable, so the Wi-Fi radio can sleep between beacons instead of listening all the time.
 
-Branch: `battery-and-low-power-states`. Hardware: `docs/hardware.md`. Board: `docs/xiao-esp32c6.md`.
+Branch: `battery-and-low-power-states`. Hardware: `docs/hardware.md`. Board: `../docs/xiao-esp32c6.md`.
 
 ## 1. Where the power goes today
 

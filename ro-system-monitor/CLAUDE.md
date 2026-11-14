@@ -10,7 +10,7 @@ Firmware + web dashboard for a 4-stage under-sink RO system on a Seeed XIAO ESP3
 | GPIO2 (D2) | Flow sensor, water OUT (clean RO) |
 | GPIO6 (MTCK pad, back of board) | Battery voltage, ADC1_CH6, via 2x 220k divider (ratio 2) + 100 nF to GND |
 
-C6 notes: avoid GPIO3 (RF switch power) and GPIO14 (antenna select); GPIO4/5/8/9/15 are strapping pins. Board docs: `docs/xiao-esp32c6.md`.
+C6 notes: avoid GPIO3 (RF switch power) and GPIO14 (antenna select); GPIO4/5/8/9/15 are strapping pins. Board docs: `../docs/xiao-esp32c6.md`.
 
 ## Commands
 - Build: `pio run 2>&1 | tail -20`
