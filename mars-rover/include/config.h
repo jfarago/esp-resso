@@ -27,4 +27,4 @@ constexpr uint32_t WIFI_RETRY_MAX_MS = 60000;
 
 // Wi-Fi log mirror: `nc mars-rover.local 23`
 constexpr uint16_t LOG_TCP_PORT = 23;
-constexpr size_t LOG_BACKLOG_BYTES = 4096;  // history replayed to a new client
+constexpr size_t LOG_BACKLOG_BYTES = 32768;  // history replayed to a new client
