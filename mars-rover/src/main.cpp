@@ -76,7 +76,7 @@ static void updateMode() {
   onModeEnter(mode);
 }
 
-// Boot self-test: spin the motors at low power for a few seconds. Non-blocking so OTA stays responsive.
+// Boot self-test: spin the motors at low power briefly (MOTOR_TEST_MS). Non-blocking so OTA stays responsive.
 static void motorSelfTest(uint32_t now) {
   static enum { Pending, Running, Done } state = Pending;
   static uint32_t startMs = 0;
