@@ -26,11 +26,37 @@ class Tee : public Print {
   void attach(WiFiClient c) {
     if (client) client.stop();
     client = c;
+    lineLen = 0;
+    lineOverflow = false;
     size_t start = (head + LOG_BACKLOG_BYTES - count) % LOG_BACKLOG_BYTES;
     for (size_t i = 0; i < count; i++) client.write(ring[(start + i) % LOG_BACKLOG_BYTES]);
   }
 
+  bool connected() { return client && client.connected(); }
+
+  // Non-blocking: collects bytes from the client; true once a full line is in buf.
+  bool readLine(char* buf, size_t n) {
+    while (client && client.available()) {
+      int c = client.read();
+      if (c == '\n') {
+        bool ok = !lineOverflow;
+        line[lineLen] = 0;
+        if (ok) strlcpy(buf, line, n);
+        lineLen = 0;
+        lineOverflow = false;
+        if (ok) return true;
+      } else if (c >= 32 && c < 127) {  // drops \r and telnet negotiation bytes
+        if (lineLen < sizeof(line) - 1) line[lineLen++] = (char)c;
+        else lineOverflow = true;
+      }
+    }
+    return false;
+  }
+
  private:
+  char line[96];
+  size_t lineLen = 0;
+  bool lineOverflow = false;
   uint8_t ring[LOG_BACKLOG_BYTES];
   size_t head = 0, count = 0;
   WiFiClient client;
@@ -45,6 +71,9 @@ bool serverUp = false;
 Print& out = tee;
 
 void begin() {}
+
+bool clientConnected() { return tee.connected(); }
+bool readLine(char* buf, size_t n) { return tee.readLine(buf, n); }
 
 void loop() {
   if (!serverUp) {

@@ -4,6 +4,29 @@
 // Pins (XIAO ESP32-C6)
 constexpr int PIN_VBAT = 6;  // battery divider midpoint, GPIO6 (MTCK pad on the back), ADC1_CH6
 
+// Motor driver (TB6612FNG), see docs/hardware.md. Left = A channel, right = B channel.
+constexpr int PIN_MOT_AIN1 = 16;  // D6
+constexpr int PIN_MOT_AIN2 = 17;  // D7
+constexpr int PIN_MOT_PWMA = 19;  // D8
+constexpr int PIN_MOT_BIN1 = 20;  // D9
+constexpr int PIN_MOT_BIN2 = 18;  // D10
+constexpr int PIN_MOT_PWMB = 21;  // D3
+constexpr int PIN_MOT_STBY = 0;   // D0, 100k pull-down to GND
+constexpr uint32_t MOTOR_PWM_HZ = 20000;
+// Left motors are mounted mirrored, so they must spin the opposite way for the rover to go forward.
+constexpr bool MOTOR_LEFT_INVERT = true;
+constexpr bool MOTOR_RIGHT_INVERT = false;
+
+// Boot motor self-test: spin both sides forward after setup.
+constexpr float MOTOR_TEST_POWER = 0.50f;  // fraction of full duty
+constexpr uint32_t MOTOR_TEST_MS = 250;
+
+// Remote drive commands over the log connection (see commands.cpp)
+constexpr uint32_t MOVE_MAX_MS = 10000;  // longest single move; longer requests are clamped
+// Open-loop distance estimate: ground speed at 100% power, assumed linear in power.
+// Default from a measured run: 50% for 7400 ms = 20 in. Override at runtime with the `cal` command (saved to flash).
+constexpr float INCHES_PER_SEC_FULL = 20.0f / 7.4f / 0.5f;
+
 // Battery: BAT+ -> 220k -> PIN_VBAT -> 220k -> GND (ratio 2). A 100 nF cap from PIN_VBAT to GND
 // steadies the ADC reading. Same wiring as ro-system-monitor; see ../lib/battery.
 constexpr float VBAT_DIVIDER = 2.0f;

@@ -1,0 +1,210 @@
+#include "commands.h"
+#include <Arduino.h>
+#include <Preferences.h>
+#include "config.h"
+#include "motors.h"
+#include "netlog.h"
+
+namespace commands {
+
+namespace {
+
+bool moving = false;
+uint32_t moveStart = 0, moveMs = 0;
+float curL = 0, curR = 0;
+bool wasConnected = false;
+float ipsFull = INCHES_PER_SEC_FULL;  // inches per second at 100% power
+float odoL = 0, odoR = 0;             // inches per side, signed (forward positive)
+float odoTotal = 0;                   // inches travelled regardless of direction
+Preferences prefs;
+
+// Adds the in-progress move (as far as it got) to the odometer.
+void account(uint32_t now) {
+  if (!moving) return;
+  uint32_t el = min(now - moveStart, moveMs);
+  float s = el / 1000.0f;
+  odoL += curL * ipsFull * s;
+  odoR += curR * ipsFull * s;
+  odoTotal += (fabsf(curL) + fabsf(curR)) / 2 * ipsFull * s;
+  moveMs -= el;  // rebase so the same time is never counted twice
+  moveStart = now;
+}
+
+void startMove(uint32_t now, float l, float r, uint32_t ms) {
+  account(now);
+  motors::set(l, r);
+  curL = l;
+  curR = r;
+  moveStart = now;
+  moveMs = ms;
+  moving = true;
+}
+
+void stopMove() {
+  account(millis());
+  motors::stop();
+  curL = curR = 0;
+  moving = false;
+}
+
+void help() {
+  netlog::out.println(
+      "commands (speed 0-100 %, ms = duration in milliseconds, max " + String(MOVE_MAX_MS) + "):\n"
+      "  f <speed> <ms>          both sides forward\n"
+      "  b <speed> <ms>          both sides backward\n"
+      "  l <speed> <ms>          left side only (negative = reverse), right stopped\n"
+      "  r <speed> <ms>          right side only (negative = reverse), left stopped\n"
+      "  m <left> <right> <ms>   both sides, signed -100..100\n"
+      "  d <speed> <inches>      drive a distance (negative inches = backward), uses calibration\n"
+      "  cal <speed> <ms> <in>   calibrate: you drove <speed>% for <ms> and it went <in> inches\n"
+      "  odo [reset]             distance travelled estimate\n"
+      "  s                       stop now\n"
+      "  ?                       this list and motor state");
+}
+
+bool parseFloat(const char* tok, float& v) {
+  if (!tok) return false;
+  char* end;
+  v = strtof(tok, &end);
+  return end != tok && *end == 0 && isfinite(v);
+}
+
+void printOdo() {
+  netlog::out.printf("odo: net %.1f in (L %.1f, R %.1f), total %.1f in, cal %.2f in/s at 100%%\n",
+                     (odoL + odoR) / 2, odoL, odoR, odoTotal, ipsFull);
+}
+
+bool parseInt(const char* tok, long& v) {
+  if (!tok) return false;
+  char* end;
+  v = strtol(tok, &end, 10);
+  return end != tok && *end == 0;
+}
+
+void handle(const char* line, uint32_t now) {
+  char buf[96];
+  strlcpy(buf, line, sizeof(buf));
+  char* save;
+  char* cmd = strtok_r(buf, " \t", &save);
+  if (!cmd) return;
+  char* args[3];
+  int n = 0;
+  while (n < 3 && (args[n] = strtok_r(nullptr, " \t", &save))) n++;
+  if (strtok_r(nullptr, " \t", &save)) n = 99;  // too many arguments
+
+  if (!strcmp(cmd, "?")) {
+    help();
+    netlog::out.printf("state: %s L=%.0f%% R=%.0f%%\n", moving ? "moving" : "stopped", curL * 100,
+                       curR * 100);
+    return;
+  }
+  if (!strcmp(cmd, "s")) {
+    if (n != 0) { netlog::out.println("err: usage: s"); return; }
+    stopMove();
+    netlog::out.println("ok s");
+    return;
+  }
+
+  if (!strcmp(cmd, "odo")) {
+    if (n == 1 && !strcmp(args[0], "reset")) {
+      account(now);
+      odoL = odoR = odoTotal = 0;
+      netlog::out.println("ok odo reset");
+    } else if (n != 0) {
+      netlog::out.println("err: usage: odo [reset]");
+      return;
+    }
+    printOdo();
+    return;
+  }
+  if (!strcmp(cmd, "cal")) {
+    long sp, ms;
+    float in;
+    if (n != 3 || !parseInt(args[0], sp) || !parseInt(args[1], ms) || !parseFloat(args[2], in) ||
+        sp < 1 || sp > 100 || ms <= 0 || in <= 0) {
+      netlog::out.println("err: usage: cal <speed 1-100> <ms> <inches>  (all > 0)");
+      return;
+    }
+    ipsFull = in / (ms / 1000.0f) / (sp / 100.0f);
+    prefs.putFloat("ips", ipsFull);
+    netlog::out.printf("ok cal: %.2f in/s at 100%% (saved)\n", ipsFull);
+    return;
+  }
+  if (!strcmp(cmd, "d")) {
+    long sp;
+    float in;
+    if (n != 2 || !parseInt(args[0], sp) || !parseFloat(args[1], in) || sp < 1 || sp > 100 || in == 0) {
+      netlog::out.println("err: usage: d <speed 1-100> <inches>  (negative inches = backward)");
+      return;
+    }
+    float ips = ipsFull * sp / 100.0f;
+    float ms = fabsf(in) / ips * 1000.0f;
+    bool clamped = ms > MOVE_MAX_MS;
+    if (clamped) ms = MOVE_MAX_MS;
+    float v = (in > 0 ? sp : -sp) / 100.0f;
+    startMove(now, v, v, (uint32_t)(ms + 0.5f));
+    netlog::out.printf("ok L=%.0f%% R=%.0f%% for %.0f ms (~%.1f in%s)\n", v * 100, v * 100, ms,
+                       (in > 0 ? 1 : -1) * ms / 1000.0f * ips, clamped ? ", clamped to max time" : "");
+    return;
+  }
+
+  char c = cmd[0];
+  bool known = cmd[1] == 0 && strchr("fblrm", c);
+  if (!known) { netlog::out.printf("err: unknown command '%s' (? for help)\n", cmd); return; }
+
+  int need = (c == 'm') ? 3 : 2;
+  long a = 0, b = 0, ms = 0;
+  bool ok = n == need && parseInt(args[0], a) && (c != 'm' || parseInt(args[1], b)) &&
+            parseInt(args[need - 1], ms);
+  if (!ok) {
+    netlog::out.println(c == 'm' ? "err: usage: m <left> <right> <ms>" : "err: usage: <f|b|l|r> <speed> <ms>");
+    return;
+  }
+  if (ms <= 0) { netlog::out.println("err: ms must be > 0"); return; }
+  if (ms > (long)MOVE_MAX_MS) ms = MOVE_MAX_MS;
+
+  if ((c == 'f' || c == 'b') && a < 0) {
+    netlog::out.println("err: speed must be 0-100 for f/b (use m or l/r for signed)");
+    return;
+  }
+  a = constrain(a, -100L, 100L);
+  b = constrain(b, -100L, 100L);
+
+  float l = 0, r = 0;
+  switch (c) {
+    case 'f': l = r = a / 100.0f; break;
+    case 'b': l = r = -a / 100.0f; break;
+    case 'l': l = a / 100.0f; break;
+    case 'r': r = a / 100.0f; break;
+    case 'm': l = a / 100.0f; r = b / 100.0f; break;
+  }
+  startMove(now, l, r, (uint32_t)ms);
+  netlog::out.printf("ok L=%.0f%% R=%.0f%% for %ld ms\n", l * 100, r * 100, ms);
+}
+
+}  // namespace
+
+void begin() {
+  prefs.begin("rover", false);
+  ipsFull = prefs.getFloat("ips", INCHES_PER_SEC_FULL);
+  netlog::out.printf("[commands] calibration %.2f in/s at 100%%\n", ipsFull);
+}
+
+void loop(uint32_t now) {
+  bool connected = netlog::clientConnected();
+  if (wasConnected && !connected && moving) {
+    stopMove();
+    netlog::out.println("[commands] client disconnected, motors stopped");
+  }
+  wasConnected = connected;
+
+  if (moving && now - moveStart >= moveMs) {
+    stopMove();
+    netlog::out.println("done");
+  }
+
+  char line[96];
+  while (netlog::readLine(line, sizeof(line))) handle(line, now);
+}
+
+}  // namespace commands

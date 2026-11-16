@@ -1,6 +1,8 @@
 #include <Arduino.h>
 #include <battery.h>
 #include "config.h"
+#include "commands.h"
+#include "motors.h"
 #include "net.h"
 #include "netlog.h"
 #include "ota.h"
@@ -74,6 +76,24 @@ static void updateMode() {
   onModeEnter(mode);
 }
 
+// Boot self-test: spin the motors at low power for a few seconds. Non-blocking so OTA stays responsive.
+static void motorSelfTest(uint32_t now) {
+  static enum { Pending, Running, Done } state = Pending;
+  static uint32_t startMs = 0;
+  if (state == Done) return;
+  if (state == Pending) {
+    startMs = now;
+    motors::set(MOTOR_TEST_POWER, MOTOR_TEST_POWER);
+    netlog::out.printf("[motors] self-test: %.0f%% for %lu ms\n", MOTOR_TEST_POWER * 100,
+                       (unsigned long)MOTOR_TEST_MS);
+    state = Running;
+  } else if (now - startMs >= MOTOR_TEST_MS) {
+    motors::stop();
+    netlog::out.println("[motors] self-test done");
+    state = Done;
+  }
+}
+
 void setup() {
   Serial.begin(115200);
   pinMode(LED_BUILTIN, OUTPUT);
@@ -90,6 +110,8 @@ void setup() {
   bc.presentMinV = VBAT_PRESENT_MIN_V;
   battery::begin(bc);
   net::begin();
+  motors::begin();
+  commands::begin();
 }
 
 void loop() {
@@ -97,9 +119,11 @@ void loop() {
   net::loop(now);
   ota::loop();
   netlog::loop();
+  commands::loop(now);
   battery::update(now);
   updateMode();
   logBattery(now);
+  motorSelfTest(now);
   // Non-blocking 1 Hz blink so OTA stays responsive.
   digitalWrite(LED_BUILTIN, (now / 500) % 2 == 0 ? LED_ON : LED_OFF);
 }
