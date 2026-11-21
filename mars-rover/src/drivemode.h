@@ -12,6 +12,8 @@ enum class Mode { Stop, Explore, Seek, Sleep };
 bool set(Mode m, uint32_t now);
 Mode current();
 const char* name();
+float seekArc();             // steering strength, see SEEK_ARC
+void setSeekArc(float arc);
 bool active();  // Explore or Seek: driving on its own
 
 void loop(uint32_t now);  // call every loop: runs the explore behavior

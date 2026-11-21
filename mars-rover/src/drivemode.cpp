@@ -25,6 +25,7 @@ bool paused = false;   // motors stopped because of a failed read
 float steerL = 1, steerR = 1;     // forward-phase wheel scaling toward the brighter side
 float smoothAvg = 0, smoothDiff = 0;
 bool smoothInit = false;
+float arc = SEEK_ARC;
 float bestAvg = 0, scanBest = 0;  // lux
 uint32_t bestAt = 0;
 
@@ -74,6 +75,8 @@ const char* name() {
 }
 
 Mode current() { return mode; }
+float seekArc() { return arc; }
+void setSeekArc(float a) { arc = a; }
 bool active() { return mode == Mode::Explore || mode == Mode::Seek; }
 
 bool set(Mode m, uint32_t now) {
@@ -182,8 +185,8 @@ void loop(uint32_t now) {
       {
         float band = max(SEEK_BAND_MIN_LUX, SEEK_BAND_FRAC * smoothAvg);
         // Brighter on one side: slow that side's wheels so the rover arcs toward it.
-        steerL = smoothDiff > band ? 1 - SEEK_ARC : 1;
-        steerR = smoothDiff < -band ? 1 - SEEK_ARC : 1;
+        steerL = smoothDiff > band ? 1 - arc : 1;
+        steerR = smoothDiff < -band ? 1 - arc : 1;
         applyPhase();
       }
       if (smoothAvg > bestAvg * SEEK_IMPROVE) {

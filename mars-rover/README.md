@@ -25,6 +25,7 @@ Connect with `nc mars-rover.local 23`. The same connection streams the logs and 
 | `cal <speed> <ms> <inches>` | `cal 50 7400 20` | Calibrate from a measured run; saved to flash |
 | `odo [reset]` | `odo` | Show or zero the estimated distance travelled |
 | `dist` | `dist` | Read the VL53L0X: distance, clearance (reading minus `DIST_SENSOR_OFFSET_MM`) and buffer |
+| `arc [0-2]` | `arc 1.2` | Show or set how sharply `seek` steers toward the brighter side: 0 = none, 1 = inner wheels stop, 2 = pivot in place (default 0.7, saved to flash) |
 | `i2c` | `i2c` | Scan the I2C bus and list responding addresses (for wiring checks) |
 | `buf [inches]` | `buf 1.5` | Show or set the clearance kept from obstacles (default 1 in, saved to flash) |
 | `explore` | `explore` | Drive around autonomously: forward until within the buffer, back up, spin until clear, repeat |

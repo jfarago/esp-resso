@@ -24,7 +24,7 @@ constexpr uint8_t LIGHT_ADDR_RIGHT = 0x5C;
 // Seek mode (find the brightest spot to recharge, see drivemode.cpp). Spins to scan, aligns on the
 // brightest direction, then drives toward the brighter side, stopping once brightness stops improving.
 constexpr float SEEK_SPEED = 0.45f;             // forward power
-constexpr float SEEK_ARC = 0.35f;               // slow the inner side by this fraction when steering
+constexpr float SEEK_ARC = 0.7f;                // default steering strength, set at runtime with `arc`: the inner side runs at (1 - arc) x speed (1 = stopped, 2 = full reverse pivot)
 constexpr uint32_t SEEK_SCAN_MS = 4000;         // initial spin; ideally about one full turn, tune to your rover
 constexpr float SEEK_ALIGN_FRAC = 0.9f;         // after the scan, keep spinning until lux >= this x scan best
 constexpr float SEEK_BAND_FRAC = 0.08f;         // left/right difference ignored below this fraction of average lux

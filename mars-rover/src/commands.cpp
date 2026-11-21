@@ -62,6 +62,7 @@ void help() {
       "  cal <speed> <ms> <in>   calibrate: you drove <speed>% for <ms> and it went <in> inches\n"
       "  odo [reset]             distance travelled estimate\n"
       "  dist                    distance ahead from the VL53L0X\n"
+      "  arc [0-2]               show/set how sharply seek steers toward light (saved)\n"
       "  i2c                     scan the I2C bus (0x23/0x5C = BH1750s, 0x29 = VL53L0X)\n"
       "  buf [inches]            show/set the clearance kept from obstacles (saved)\n"
       "  explore                 drive around, backing up and turning to avoid obstacles\n"
@@ -137,7 +138,7 @@ void handle(const char* line, uint32_t now) {
   }
   // Any other command (manual driving etc.) takes over from explore/sleep.
   if (drivemode::current() != drivemode::Mode::Stop && strcmp(cmd, "?") && strcmp(cmd, "dist") &&
-      strcmp(cmd, "buf") && strcmp(cmd, "i2c") && strcmp(cmd, "odo")) {
+      strcmp(cmd, "buf") && strcmp(cmd, "arc") && strcmp(cmd, "i2c") && strcmp(cmd, "odo")) {
     drivemode::set(drivemode::Mode::Stop, now);
   }
   if (!strcmp(cmd, "i2c")) {
@@ -151,6 +152,20 @@ void handle(const char* line, uint32_t now) {
       }
     }
     netlog::out.printf("i2c: %d device(s)\n", found);
+    return;
+  }
+  if (!strcmp(cmd, "arc")) {
+    float a;
+    if (n == 1 && parseFloat(args[0], a) && a >= 0 && a <= 2) {
+      drivemode::setSeekArc(a);
+      prefs.putFloat("arc", a);
+      netlog::out.printf("ok arc: %.2f (saved)\n", a);
+    } else if (n != 0) {
+      netlog::out.println("err: usage: arc [0-2]  (0 = no steering, 1 = inner side stops, 2 = pivot)");
+      return;
+    } else {
+      netlog::out.printf("arc: %.2f\n", drivemode::seekArc());
+    }
     return;
   }
   if (!strcmp(cmd, "buf")) {
@@ -263,6 +278,7 @@ void begin() {
   prefs.begin("rover", false);
   ipsFull = prefs.getFloat("ips", INCHES_PER_SEC_FULL);
   distance::setBufferIn(prefs.getFloat("buf", DIST_BUFFER_IN));
+  drivemode::setSeekArc(prefs.getFloat("arc", SEEK_ARC));
   netlog::out.printf("[commands] buffer %.2f in\n", distance::bufferIn());
   netlog::out.printf("[commands] calibration %.2f in/s at 100%%\n", ipsFull);
 }
