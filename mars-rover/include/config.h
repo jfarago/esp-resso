@@ -32,6 +32,8 @@ constexpr float SEEK_BAND_MIN_LUX = 20.0f;      // ...and never below this
 constexpr float SEEK_SMOOTH_ALPHA = 0.3f;       // lux smoothing (1 = none)
 constexpr float SEEK_IMPROVE = 1.03f;           // a new best must beat the old by this factor
 constexpr uint32_t SEEK_PLATEAU_MS = 10000;     // no new best for this long = arrived, stop
+constexpr float SEEK_STEER_RANGE_FRAC = 0.25f;  // steering ramps from 0 to full `arc` as the left/right gap grows from the band to this fraction of average lux beyond it
+constexpr uint32_t SEEK_LOG_MS = 2000;          // seek status line interval while driving
 
 // Explore mode (see drivemode.cpp)
 constexpr float EXPLORE_SPEED = 0.50f;          // forward/backward power, fraction of full duty

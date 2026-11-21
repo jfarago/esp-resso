@@ -5,6 +5,7 @@
 #include "config.h"
 #include "distance.h"
 #include "drivemode.h"
+#include "light.h"
 #include "motors.h"
 #include "netlog.h"
 
@@ -62,6 +63,8 @@ void help() {
       "  cal <speed> <ms> <in>   calibrate: you drove <speed>% for <ms> and it went <in> inches\n"
       "  odo [reset]             distance travelled estimate\n"
       "  dist                    distance ahead from the VL53L0X\n"
+      "  lux                     left/right light levels from the BH1750s\n"
+      "  cfg [reset]             show all saved settings (cal, buf, arc); reset restores defaults\n"
       "  arc [0-2]               show/set how sharply seek steers toward light (saved)\n"
       "  i2c                     scan the I2C bus (0x23/0x5C = BH1750s, 0x29 = VL53L0X)\n"
       "  buf [inches]            show/set the clearance kept from obstacles (saved)\n"
@@ -138,7 +141,8 @@ void handle(const char* line, uint32_t now) {
   }
   // Any other command (manual driving etc.) takes over from explore/sleep.
   if (drivemode::current() != drivemode::Mode::Stop && strcmp(cmd, "?") && strcmp(cmd, "dist") &&
-      strcmp(cmd, "buf") && strcmp(cmd, "arc") && strcmp(cmd, "i2c") && strcmp(cmd, "odo")) {
+      strcmp(cmd, "buf") && strcmp(cmd, "arc") && strcmp(cmd, "i2c") && strcmp(cmd, "odo") &&
+      strcmp(cmd, "lux") && strcmp(cmd, "cfg")) {
     drivemode::set(drivemode::Mode::Stop, now);
   }
   if (!strcmp(cmd, "i2c")) {
@@ -152,6 +156,30 @@ void handle(const char* line, uint32_t now) {
       }
     }
     netlog::out.printf("i2c: %d device(s)\n", found);
+    return;
+  }
+  if (!strcmp(cmd, "lux")) {
+    if (n != 0) { netlog::out.println("err: usage: lux"); return; }
+    float l, r;
+    if (!light::read(l, r)) { netlog::out.println("err: BH1750 not ready or read failed (try i2c)"); return; }
+    netlog::out.printf("lux: left %.0f, right %.0f, diff %+.0f (left - right), avg %.0f\n", l, r, l - r, (l + r) / 2);
+    return;
+  }
+  if (!strcmp(cmd, "cfg")) {
+    if (n == 1 && !strcmp(args[0], "reset")) {
+      ipsFull = INCHES_PER_SEC_FULL;
+      distance::setBufferIn(DIST_BUFFER_IN);
+      drivemode::setSeekArc(SEEK_ARC);
+      prefs.remove("ips");
+      prefs.remove("buf");
+      prefs.remove("arc");
+      netlog::out.println("ok cfg reset to config.h defaults");
+    } else if (n != 0) {
+      netlog::out.println("err: usage: cfg [reset]");
+      return;
+    }
+    netlog::out.printf("cfg: cal %.2f in/s at 100%%, buf %.2f in, arc %.2f\n", ipsFull, distance::bufferIn(),
+                       drivemode::seekArc());
     return;
   }
   if (!strcmp(cmd, "arc")) {

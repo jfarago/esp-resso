@@ -27,7 +27,7 @@ float smoothAvg = 0, smoothDiff = 0;
 bool smoothInit = false;
 float arc = SEEK_ARC;
 float bestAvg = 0, scanBest = 0;  // lux
-uint32_t bestAt = 0;
+uint32_t bestAt = 0, lastLogMs = 0;
 
 void log(const char* fmt, float a = 0) {
   char ts[16];
@@ -185,9 +185,19 @@ void loop(uint32_t now) {
       {
         float band = max(SEEK_BAND_MIN_LUX, SEEK_BAND_FRAC * smoothAvg);
         // Brighter on one side: slow that side's wheels so the rover arcs toward it.
-        steerL = smoothDiff > band ? 1 - arc : 1;
-        steerR = smoothDiff < -band ? 1 - arc : 1;
+        // The harder the imbalance, the harder the turn: ramps from 0 at the band edge to full `arc`.
+        float range = max(2 * SEEK_BAND_MIN_LUX, SEEK_STEER_RANGE_FRAC * smoothAvg);
+        float s = constrain((fabsf(smoothDiff) - band) / range, 0.0f, 1.0f);
+        steerL = smoothDiff > 0 ? 1 - arc * s : 1;
+        steerR = smoothDiff < 0 ? 1 - arc * s : 1;
         applyPhase();
+      }
+      if (now - lastLogMs >= SEEK_LOG_MS) {
+        lastLogMs = now;
+        char ts[16];
+        netlog::stamp(ts, sizeof(ts));
+        netlog::out.printf("%s [seek] L %.0f R %.0f lux, avg %.0f, best %.0f, wheels %.0f%%/%.0f%%\n", ts, l, r,
+                           smoothAvg, bestAvg, steerL * 100, steerR * 100);
       }
       if (smoothAvg > bestAvg * SEEK_IMPROVE) {
         bestAvg = smoothAvg;
