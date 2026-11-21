@@ -5,6 +5,12 @@
 // Pins (XIAO ESP32-C6)
 constexpr int PIN_VBAT = 6;  // battery divider midpoint, GPIO6 (MTCK pad on the back), ADC1_CH6
 
+// I2C bus (default Wire pins on the XIAO C6), shared by the BH1750 light sensors and the VL53L0X.
+constexpr int PIN_I2C_SDA = 22;  // D4
+constexpr int PIN_I2C_SCL = 23;  // D5
+constexpr uint32_t I2C_HZ = 400000;
+constexpr uint16_t DIST_TIMEOUT_MS = 500;  // VL53L0X read timeout
+
 // Motor driver (TB6612FNG), see docs/hardware.md. Left = A channel, right = B channel.
 constexpr int PIN_MOT_AIN1 = 16;  // D6
 constexpr int PIN_MOT_AIN2 = 17;  // D7

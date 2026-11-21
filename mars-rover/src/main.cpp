@@ -1,6 +1,7 @@
 #include <Arduino.h>
 #include <battery.h>
 #include "config.h"
+#include "distance.h"
 #include "commands.h"
 #include "motors.h"
 #include "net.h"
@@ -117,6 +118,7 @@ void setup() {
   battery::begin(bc);
   net::begin();
   power::begin();
+  distance::begin();
   motors::begin();
   commands::begin();
 }

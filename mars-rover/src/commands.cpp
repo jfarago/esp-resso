@@ -2,6 +2,7 @@
 #include <Arduino.h>
 #include <Preferences.h>
 #include "config.h"
+#include "distance.h"
 #include "motors.h"
 #include "netlog.h"
 
@@ -58,6 +59,7 @@ void help() {
       "  d <speed> <inches>      drive a distance (negative inches = backward), uses calibration\n"
       "  cal <speed> <ms> <in>   calibrate: you drove <speed>% for <ms> and it went <in> inches\n"
       "  odo [reset]             distance travelled estimate\n"
+      "  dist                    distance ahead from the VL53L0X, in mm\n"
       "  s                       stop now\n"
       "  ?                       this list and motor state");
 }
@@ -105,6 +107,14 @@ void handle(const char* line, uint32_t now) {
     return;
   }
 
+  if (!strcmp(cmd, "dist")) {
+    if (n != 0) { netlog::out.println("err: usage: dist"); return; }
+    if (!distance::ready()) { netlog::out.println("err: VL53L0X not found (check wiring)"); return; }
+    int mm = distance::readMm();
+    if (mm < 0) netlog::out.println("err: no reading (timeout or out of range)");
+    else netlog::out.printf("dist: %d mm (%.1f in)\n", mm, mm / 25.4f);
+    return;
+  }
   if (!strcmp(cmd, "odo")) {
     if (n == 1 && !strcmp(args[0], "reset")) {
       account(now);
