@@ -24,10 +24,16 @@ Connect with `nc mars-rover.local 23`. The same connection streams the logs and 
 | `d <speed> <inches>` | `d 50 20` | Drive a distance using the calibration (negative inches = backward) |
 | `cal <speed> <ms> <inches>` | `cal 50 7400 20` | Calibrate from a measured run; saved to flash |
 | `odo [reset]` | `odo` | Show or zero the estimated distance travelled |
-| `s` | `s` | Stop immediately |
+| `dist` | `dist` | Read the VL53L0X: distance, clearance (reading minus `DIST_SENSOR_OFFSET_MM`) and buffer |
+| `buf [inches]` | `buf 1.5` | Show or set the clearance kept from obstacles (default 1 in, saved to flash) |
+| `explore` | `explore` | Drive around autonomously: forward until within the buffer, back up, spin until clear, repeat |
+| `stop` (or `s`) | `stop` | Stop immediately and leave explore/sleep |
+| `sleep` | `sleep` | Light sleep, even with `nc` connected; wakes on Wi-Fi traffic. Send `stop`, `explore` or a move to wake |
 | `?` | `?` | List commands and show motor state |
 
-Every move is timed and stops itself. A new command replaces the current move. Durations are capped at 10 s (`MOVE_MAX_MS` in `include/config.h`), and the motors stop if the connection drops. Each command replies with `ok ...` or `err: ...`.
+Explore keeps driving if `nc` disconnects, so reconnect and send `stop`; it also stops itself if the sensor fails repeatedly or the rover is boxed in. Tuning (speeds, backup and turn times) is in `include/config.h`.
+
+Every manual move is timed and stops itself. A new command replaces the current move. Durations are capped at 10 s (`MOVE_MAX_MS` in `include/config.h`), and the motors stop if the connection drops. Each command replies with `ok ...` or `err: ...`.
 
 Distance is an open-loop estimate (power x time x calibration, assumed linear in power), so it drifts from real distance. The default calibration is 5.41 in/s at 100% power; recalibrate with `cal` after measuring a real run.
 

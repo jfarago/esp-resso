@@ -10,7 +10,7 @@ namespace distance {
 namespace {
 VL53L0X sensor;
 bool up = false;
-constexpr int OUT_OF_RANGE_MM = 8190;  // the sensor reports ~8190+ when nothing is in range
+float buffer = DIST_BUFFER_IN;
 }  // namespace
 
 void begin() {
@@ -25,8 +25,12 @@ bool ready() { return up; }
 int readMm() {
   if (!up) return -1;
   uint16_t mm = sensor.readRangeSingleMillimeters();
-  if (sensor.timeoutOccurred() || mm >= OUT_OF_RANGE_MM) return -1;
-  return mm;
+  if (sensor.timeoutOccurred()) return -1;
+  return mm >= OUT_OF_RANGE_MM ? OUT_OF_RANGE_MM : mm;
 }
+
+float clearanceIn(int mm) { return (mm - DIST_SENSOR_OFFSET_MM) / 25.4f; }
+float bufferIn() { return buffer; }
+void setBufferIn(float in) { buffer = in; }
 
 }  // namespace distance

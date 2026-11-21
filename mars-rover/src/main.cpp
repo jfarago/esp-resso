@@ -2,6 +2,7 @@
 #include <battery.h>
 #include "config.h"
 #include "distance.h"
+#include "drivemode.h"
 #include "commands.h"
 #include "motors.h"
 #include "net.h"
@@ -129,11 +130,14 @@ void loop() {
   ota::loop();
   netlog::loop();
   commands::loop(now);
+  drivemode::loop(now);
   battery::update(now);
   updateMode();
   logBattery(now);
   motorSelfTest(now);
   // Non-blocking 1 Hz blink so OTA stays responsive; off while idling in light sleep.
   digitalWrite(LED_BUILTIN, !power::sleeping() && (now / 500) % 2 == 0 ? LED_ON : LED_OFF);
-  power::loop(now, netlog::clientConnected() || commands::isMoving() || !selfTestDone);
+  bool sleepMode = drivemode::current() == drivemode::Mode::Sleep;
+  power::loop(now, (netlog::clientConnected() && !sleepMode) || commands::isMoving() ||
+                       drivemode::current() == drivemode::Mode::Explore || !selfTestDone);
 }

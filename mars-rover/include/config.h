@@ -11,6 +11,21 @@ constexpr int PIN_I2C_SCL = 23;  // D5
 constexpr uint32_t I2C_HZ = 400000;
 constexpr uint16_t DIST_TIMEOUT_MS = 500;  // VL53L0X read timeout
 
+// Distance sensor placement: the VL53L0X reading when the rover's front is touching a wall (measured).
+// Clearance = reading - offset. The buffer is how much clearance to keep from obstacles; this is only
+// the default, change it at runtime with the `buf` command (saved to flash).
+constexpr int DIST_SENSOR_OFFSET_MM = 58;
+constexpr float DIST_BUFFER_IN = 1.0f;
+
+// Explore mode (see drivemode.cpp)
+constexpr float EXPLORE_SPEED = 0.50f;          // forward/backward power, fraction of full duty
+constexpr float EXPLORE_TURN_SPEED = 0.60f;     // spin-in-place power
+constexpr uint32_t EXPLORE_READ_MS = 60;        // distance read interval (each read blocks ~30 ms)
+constexpr uint32_t EXPLORE_BACKUP_MS = 600;     // reverse after hitting the buffer, before turning
+constexpr uint32_t EXPLORE_TURN_MIN_MS = 300;   // always turn at least this long
+constexpr uint32_t EXPLORE_TURN_MAX_MS = 5000;  // give up (stop) if still blocked after this long turning
+constexpr float EXPLORE_CLEAR_MARGIN_IN = 6.0f; // turn until clearance exceeds buffer + this
+
 // Motor driver (TB6612FNG), see docs/hardware.md. Left = A channel, right = B channel.
 constexpr int PIN_MOT_AIN1 = 16;  // D6
 constexpr int PIN_MOT_AIN2 = 17;  // D7

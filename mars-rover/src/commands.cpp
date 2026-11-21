@@ -3,6 +3,7 @@
 #include <Preferences.h>
 #include "config.h"
 #include "distance.h"
+#include "drivemode.h"
 #include "motors.h"
 #include "netlog.h"
 
@@ -59,8 +60,11 @@ void help() {
       "  d <speed> <inches>      drive a distance (negative inches = backward), uses calibration\n"
       "  cal <speed> <ms> <in>   calibrate: you drove <speed>% for <ms> and it went <in> inches\n"
       "  odo [reset]             distance travelled estimate\n"
-      "  dist                    distance ahead from the VL53L0X, in mm\n"
-      "  s                       stop now\n"
+      "  dist                    distance ahead from the VL53L0X\n"
+      "  buf [inches]            show/set the clearance kept from obstacles (saved)\n"
+      "  explore                 drive around, backing up and turning to avoid obstacles\n"
+      "  stop (or s)             stop motors, leave explore/sleep\n"
+      "  sleep                   light sleep until stop/explore/a move command\n"
       "  ?                       this list and motor state");
 }
 
@@ -96,14 +100,48 @@ void handle(const char* line, uint32_t now) {
 
   if (!strcmp(cmd, "?")) {
     help();
-    netlog::out.printf("state: %s L=%.0f%% R=%.0f%%\n", moving ? "moving" : "stopped", curL * 100,
-                       curR * 100);
+    netlog::out.printf("state: %s L=%.0f%% R=%.0f%%, mode %s\n", moving ? "moving" : "stopped",
+                       curL * 100, curR * 100, drivemode::name());
     return;
   }
-  if (!strcmp(cmd, "s")) {
-    if (n != 0) { netlog::out.println("err: usage: s"); return; }
+  if (!strcmp(cmd, "s") || !strcmp(cmd, "stop")) {
+    if (n != 0) { netlog::out.println("err: usage: stop"); return; }
     stopMove();
-    netlog::out.println("ok s");
+    drivemode::set(drivemode::Mode::Stop, now);
+    netlog::out.println("ok stop");
+    return;
+  }
+  if (!strcmp(cmd, "explore")) {
+    if (n != 0) { netlog::out.println("err: usage: explore"); return; }
+    stopMove();
+    if (drivemode::set(drivemode::Mode::Explore, now)) netlog::out.println("ok explore");
+    else netlog::out.println("err: VL53L0X not found, will not drive blind");
+    return;
+  }
+  if (!strcmp(cmd, "sleep")) {
+    if (n != 0) { netlog::out.println("err: usage: sleep"); return; }
+    stopMove();
+    drivemode::set(drivemode::Mode::Sleep, now);
+    netlog::out.println("ok sleep (send stop, explore or a move command to wake)");
+    return;
+  }
+  // Any other command (manual driving etc.) takes over from explore/sleep.
+  if (drivemode::current() != drivemode::Mode::Stop && strcmp(cmd, "?") && strcmp(cmd, "dist") &&
+      strcmp(cmd, "buf") && strcmp(cmd, "odo")) {
+    drivemode::set(drivemode::Mode::Stop, now);
+  }
+  if (!strcmp(cmd, "buf")) {
+    float in;
+    if (n == 1 && parseFloat(args[0], in) && in >= 0 && in <= 20) {
+      distance::setBufferIn(in);
+      prefs.putFloat("buf", in);
+      netlog::out.printf("ok buf: %.2f in (saved)\n", in);
+    } else if (n != 0) {
+      netlog::out.println("err: usage: buf [inches 0-20]");
+      return;
+    } else {
+      netlog::out.printf("buf: %.2f in\n", distance::bufferIn());
+    }
     return;
   }
 
@@ -112,7 +150,9 @@ void handle(const char* line, uint32_t now) {
     if (!distance::ready()) { netlog::out.println("err: VL53L0X not found (check wiring)"); return; }
     int mm = distance::readMm();
     if (mm < 0) netlog::out.println("err: no reading (timeout or out of range)");
-    else netlog::out.printf("dist: %d mm (%.1f in)\n", mm, mm / 25.4f);
+    else if (mm == distance::OUT_OF_RANGE_MM) netlog::out.println("dist: out of range");
+    else netlog::out.printf("dist: %d mm (%.1f in), clearance %.1f in, buffer %.1f in\n", mm,
+                            mm / 25.4f, distance::clearanceIn(mm), distance::bufferIn());
     return;
   }
   if (!strcmp(cmd, "odo")) {
@@ -199,6 +239,8 @@ bool isMoving() { return moving; }
 void begin() {
   prefs.begin("rover", false);
   ipsFull = prefs.getFloat("ips", INCHES_PER_SEC_FULL);
+  distance::setBufferIn(prefs.getFloat("buf", DIST_BUFFER_IN));
+  netlog::out.printf("[commands] buffer %.2f in\n", distance::bufferIn());
   netlog::out.printf("[commands] calibration %.2f in/s at 100%%\n", ipsFull);
 }
 
