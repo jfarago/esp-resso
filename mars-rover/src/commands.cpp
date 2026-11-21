@@ -63,6 +63,7 @@ void help() {
       "  dist                    distance ahead from the VL53L0X\n"
       "  buf [inches]            show/set the clearance kept from obstacles (saved)\n"
       "  explore                 drive around, backing up and turning to avoid obstacles\n"
+      "  seek                    find the brightest spot (to recharge), then stop\n"
       "  stop (or s)             stop motors, leave explore/sleep\n"
       "  sleep                   light sleep until stop/explore/a move command\n"
       "  ?                       this list and motor state");
@@ -116,6 +117,13 @@ void handle(const char* line, uint32_t now) {
     stopMove();
     if (drivemode::set(drivemode::Mode::Explore, now)) netlog::out.println("ok explore");
     else netlog::out.println("err: VL53L0X not found, will not drive blind");
+    return;
+  }
+  if (!strcmp(cmd, "seek")) {
+    if (n != 0) { netlog::out.println("err: usage: seek"); return; }
+    stopMove();
+    if (drivemode::set(drivemode::Mode::Seek, now)) netlog::out.println("ok seek");
+    else netlog::out.println("err: need the VL53L0X and both BH1750 sensors (check wiring)");
     return;
   }
   if (!strcmp(cmd, "sleep")) {

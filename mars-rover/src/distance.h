@@ -2,7 +2,7 @@
 
 namespace distance {
 
-void begin();     // starts I2C and the VL53L0X; logs and stays disabled if the sensor is missing
+void begin();     // starts the VL53L0X (Wire must already be started); logs and stays disabled if the sensor is missing
 bool ready();     // sensor initialised
 constexpr int OUT_OF_RANGE_MM = 8190;  // readMm() value when nothing is in range
 

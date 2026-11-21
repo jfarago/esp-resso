@@ -3,6 +3,8 @@
 #include "config.h"
 #include "distance.h"
 #include "drivemode.h"
+#include "light.h"
+#include <Wire.h>
 #include "commands.h"
 #include "motors.h"
 #include "net.h"
@@ -48,7 +50,15 @@ static Mode nextMode(Mode cur, float v) {
 static void onModeEnter(Mode m) {
   switch (m) {
     case Mode::Drive: netlog::out.println("[mode] would accept remote commands / explore"); break;
-    case Mode::SunSeek: netlog::out.println("[mode] would steer toward the brighter light sensor"); break;
+    case Mode::SunSeek:
+      // Low battery while exploring: go find light. Otherwise leave the rover where it is.
+      if (drivemode::current() == drivemode::Mode::Explore &&
+          drivemode::set(drivemode::Mode::Seek, millis())) {
+        netlog::out.println("[mode] battery low, seeking the brightest spot");
+      } else {
+        netlog::out.println("[mode] battery low (send `seek` to find light)");
+      }
+      break;
     case Mode::DeepSleepCharge: netlog::out.println("[mode] would stop motors and deep sleep, waking periodically to check battery"); break;
     default: break;
   }
@@ -119,7 +129,9 @@ void setup() {
   battery::begin(bc);
   net::begin();
   power::begin();
+  Wire.begin(PIN_I2C_SDA, PIN_I2C_SCL, I2C_HZ);
   distance::begin();
+  light::begin();
   motors::begin();
   commands::begin();
 }
@@ -139,5 +151,5 @@ void loop() {
   digitalWrite(LED_BUILTIN, !power::sleeping() && (now / 500) % 2 == 0 ? LED_ON : LED_OFF);
   bool sleepMode = drivemode::current() == drivemode::Mode::Sleep;
   power::loop(now, (netlog::clientConnected() && !sleepMode) || commands::isMoving() ||
-                       drivemode::current() == drivemode::Mode::Explore || !selfTestDone);
+                       drivemode::active() || !selfTestDone);
 }

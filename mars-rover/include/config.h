@@ -17,6 +17,22 @@ constexpr uint16_t DIST_TIMEOUT_MS = 500;  // VL53L0X read timeout
 constexpr int DIST_SENSOR_OFFSET_MM = 58;
 constexpr float DIST_BUFFER_IN = 1.0f;
 
+// BH1750 light sensors on the shared I2C bus: left ADDR open/GND, right ADDR to 3V3 (docs/hardware.md).
+constexpr uint8_t LIGHT_ADDR_LEFT = 0x23;
+constexpr uint8_t LIGHT_ADDR_RIGHT = 0x5C;
+
+// Seek mode (find the brightest spot to recharge, see drivemode.cpp). Spins to scan, aligns on the
+// brightest direction, then drives toward the brighter side, stopping once brightness stops improving.
+constexpr float SEEK_SPEED = 0.45f;             // forward power
+constexpr float SEEK_ARC = 0.35f;               // slow the inner side by this fraction when steering
+constexpr uint32_t SEEK_SCAN_MS = 4000;         // initial spin; ideally about one full turn, tune to your rover
+constexpr float SEEK_ALIGN_FRAC = 0.9f;         // after the scan, keep spinning until lux >= this x scan best
+constexpr float SEEK_BAND_FRAC = 0.08f;         // left/right difference ignored below this fraction of average lux
+constexpr float SEEK_BAND_MIN_LUX = 20.0f;      // ...and never below this
+constexpr float SEEK_SMOOTH_ALPHA = 0.3f;       // lux smoothing (1 = none)
+constexpr float SEEK_IMPROVE = 1.03f;           // a new best must beat the old by this factor
+constexpr uint32_t SEEK_PLATEAU_MS = 10000;     // no new best for this long = arrived, stop
+
 // Explore mode (see drivemode.cpp)
 constexpr float EXPLORE_SPEED = 0.50f;          // forward/backward power, fraction of full duty
 constexpr float EXPLORE_TURN_SPEED = 0.60f;     // spin-in-place power

@@ -27,6 +27,7 @@ Connect with `nc mars-rover.local 23`. The same connection streams the logs and 
 | `dist` | `dist` | Read the VL53L0X: distance, clearance (reading minus `DIST_SENSOR_OFFSET_MM`) and buffer |
 | `buf [inches]` | `buf 1.5` | Show or set the clearance kept from obstacles (default 1 in, saved to flash) |
 | `explore` | `explore` | Drive around autonomously: forward until within the buffer, back up, spin until clear, repeat |
+| `seek` | `seek` | Find the brightest spot to recharge: spin to scan with the two BH1750s, face the brightest direction, drive toward the brighter side (avoiding obstacles), and stop when brightness stops improving. Also starts by itself if the battery drops below 3.5 V while exploring |
 | `stop` (or `s`) | `stop` | Stop immediately and leave explore/sleep |
 | `sleep` | `sleep` | Light sleep, even with `nc` connected; wakes on Wi-Fi traffic. Send `stop`, `explore` or a move to wake |
 | `?` | `?` | List commands and show motor state |
