@@ -1,4 +1,5 @@
 #pragma once
+#include <stddef.h>
 #include <stdint.h>
 
 // Pins (XIAO ESP32-C6)
@@ -34,7 +35,7 @@ constexpr float VBAT_CAL = 1.0088f;         // tuned on this board: 4.062 V on a
 constexpr int VBAT_SAMPLES = 64;
 constexpr uint32_t VBAT_SAMPLE_MS = 1000;
 constexpr float VBAT_SMOOTH_ALPHA = 0.2f;
-constexpr uint32_t VBAT_LOG_MS = 60000;
+constexpr uint32_t VBAT_LOG_MS = 300000;
 constexpr float VBAT_PRESENT_MIN_V = 2.0f;
 
 // Power modes (see docs/project-overview.md section 6). Hysteresis: Drive <-> Sun-seek uses 3.5/3.6 V.
@@ -51,3 +52,10 @@ constexpr uint32_t WIFI_RETRY_MAX_MS = 60000;
 // Wi-Fi log mirror: `nc mars-rover.local 23`
 constexpr uint16_t LOG_TCP_PORT = 23;
 constexpr size_t LOG_BACKLOG_BYTES = 32768;  // history replayed to a new client
+
+// Light sleep (see power.cpp): after POWER_IDLE_MS with no nc client and no motion, the CPU sleeps and
+// wakes on Wi-Fi traffic or every POWER_SLEEP_TIMER_MS (battery sample/log). After a Wi-Fi wake it
+// stays up POWER_WAKE_WINDOW_MS so an incoming nc connection can be accepted.
+constexpr uint32_t POWER_IDLE_MS = 30000;
+constexpr uint32_t POWER_SLEEP_TIMER_MS = 300000;
+constexpr uint32_t POWER_WAKE_WINDOW_MS = 100;

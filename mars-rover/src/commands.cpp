@@ -184,6 +184,8 @@ void handle(const char* line, uint32_t now) {
 
 }  // namespace
 
+bool isMoving() { return moving; }
+
 void begin() {
   prefs.begin("rover", false);
   ipsFull = prefs.getFloat("ips", INCHES_PER_SEC_FULL);

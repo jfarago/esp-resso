@@ -6,6 +6,7 @@
 #include "net.h"
 #include "netlog.h"
 #include "ota.h"
+#include "power.h"
 
 // XIAO ESP32-C6 user LED (GPIO15) is active-low; LED_BUILTIN comes from the board variant.
 static const uint8_t LED_ON = LOW;
@@ -59,10 +60,13 @@ static void logBattery(uint32_t now) {
   if (battery::volts() < 0) return;  // no sample yet
   logged = true;
   lastMs = now;
-  uint32_t s = now / 1000;
-  netlog::out.printf("[%02lu:%02lu:%02lu] [battery] %.2f V%s\n", (unsigned long)(s / 3600),
-                     (unsigned long)(s / 60 % 60), (unsigned long)(s % 60), battery::volts(),
+  char ts[16];
+  netlog::stamp(ts, sizeof(ts));
+  netlog::out.printf("%s [battery] %.2f V%s", ts, battery::volts(),
                      battery::present() ? "" : " (no battery detected)");
+  uint32_t wakes = power::takeWifiWakes();
+  if (wakes) netlog::out.printf(" (%lu wifi wakes)", (unsigned long)wakes);
+  netlog::out.println();
 }
 
 static void updateMode() {
@@ -77,6 +81,7 @@ static void updateMode() {
 }
 
 // Boot self-test: spin the motors at low power briefly (MOTOR_TEST_MS). Non-blocking so OTA stays responsive.
+static bool selfTestDone = false;
 static void motorSelfTest(uint32_t now) {
   static enum { Pending, Running, Done } state = Pending;
   static uint32_t startMs = 0;
@@ -91,6 +96,7 @@ static void motorSelfTest(uint32_t now) {
     motors::stop();
     netlog::out.println("[motors] self-test done");
     state = Done;
+    selfTestDone = true;
   }
 }
 
@@ -110,6 +116,7 @@ void setup() {
   bc.presentMinV = VBAT_PRESENT_MIN_V;
   battery::begin(bc);
   net::begin();
+  power::begin();
   motors::begin();
   commands::begin();
 }
@@ -124,6 +131,7 @@ void loop() {
   updateMode();
   logBattery(now);
   motorSelfTest(now);
-  // Non-blocking 1 Hz blink so OTA stays responsive.
-  digitalWrite(LED_BUILTIN, (now / 500) % 2 == 0 ? LED_ON : LED_OFF);
+  // Non-blocking 1 Hz blink so OTA stays responsive; off while idling in light sleep.
+  digitalWrite(LED_BUILTIN, !power::sleeping() && (now / 500) % 2 == 0 ? LED_ON : LED_OFF);
+  power::loop(now, netlog::clientConnected() || commands::isMoving() || !selfTestDone);
 }

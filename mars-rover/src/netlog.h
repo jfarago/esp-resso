@@ -10,6 +10,7 @@ void begin();  // call after Serial.begin()
 void loop();   // accepts a client once Wi-Fi is up; call every loop
 
 bool clientConnected();                // a client is currently attached
+void stamp(char* buf, size_t n);       // "[HH:MM:SS]" uptime (hours keep counting past 24)
 bool readLine(char* buf, size_t n);    // non-blocking; true when a full input line was copied to buf
 
 }  // namespace netlog

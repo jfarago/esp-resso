@@ -6,5 +6,6 @@ namespace commands {
 
 void begin();             // loads the saved calibration
 void loop(uint32_t now);  // call every loop: parses input, ends timed moves, failsafe on disconnect
+bool isMoving();           // a timed move is in progress
 
 }  // namespace commands

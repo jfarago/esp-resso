@@ -72,6 +72,12 @@ Print& out = tee;
 
 void begin() {}
 
+void stamp(char* buf, size_t n) {
+  uint32_t s = millis() / 1000;
+  snprintf(buf, n, "[%02lu:%02lu:%02lu]", (unsigned long)(s / 3600), (unsigned long)(s / 60 % 60),
+           (unsigned long)(s % 60));
+}
+
 bool clientConnected() { return tee.connected(); }
 bool readLine(char* buf, size_t n) { return tee.readLine(buf, n); }
 

@@ -12,6 +12,7 @@ static bool wasConnected = false;
 static bool mdnsUp = false;
 static uint32_t nextAttemptMs = 0;
 static uint32_t backoffMs = WIFI_RETRY_MIN_MS;
+static volatile uint8_t lastDisconnectReason = 0;  // written from the Wi-Fi event task
 
 static void attempt(uint32_t now) {
   netlog::out.printf("[net] connecting to \"%s\" (next retry in %lu s)\n", WIFI_SSID,
@@ -27,6 +28,11 @@ void begin() {
   WiFi.mode(WIFI_STA);
   WiFi.setHostname(MDNS_HOSTNAME);
   WiFi.setAutoReconnect(false);  // reconnects are driven by loop() with backoff
+  WiFi.onEvent(
+      [](arduino_event_id_t, arduino_event_info_t info) {
+        lastDisconnectReason = info.wifi_sta_disconnected.reason;
+      },
+      ARDUINO_EVENT_WIFI_STA_DISCONNECTED);
   attempt(millis());
 }
 
@@ -41,7 +47,9 @@ void loop(uint32_t now) {
       netlog::out.printf("[net] mDNS %s.local\n", MDNS_HOSTNAME);
     }
   } else if (!up && wasConnected) {
-    netlog::out.println("[net] Wi-Fi lost");
+    uint8_t r = lastDisconnectReason;
+    netlog::out.printf("[net] Wi-Fi lost (reason %u: %s)\n", r,
+                       WiFi.disconnectReasonName((wifi_err_reason_t)r));
     nextAttemptMs = now + 1000;  // first retry quickly, then back off
   }
   wasConnected = up;
