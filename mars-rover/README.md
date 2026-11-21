@@ -25,6 +25,7 @@ Connect with `nc mars-rover.local 23`. The same connection streams the logs and 
 | `cal <speed> <ms> <inches>` | `cal 50 7400 20` | Calibrate from a measured run; saved to flash |
 | `odo [reset]` | `odo` | Show or zero the estimated distance travelled |
 | `dist` | `dist` | Read the VL53L0X: distance, clearance (reading minus `DIST_SENSOR_OFFSET_MM`) and buffer |
+| `i2c` | `i2c` | Scan the I2C bus and list responding addresses (for wiring checks) |
 | `buf [inches]` | `buf 1.5` | Show or set the clearance kept from obstacles (default 1 in, saved to flash) |
 | `explore` | `explore` | Drive around autonomously: forward until within the buffer, back up, spin until clear, repeat |
 | `seek` | `seek` | Find the brightest spot to recharge: spin to scan with the two BH1750s, face the brightest direction, drive toward the brighter side (avoiding obstacles), and stop when brightness stops improving. Also starts by itself if the battery drops below 3.5 V while exploring |

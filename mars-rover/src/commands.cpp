@@ -1,6 +1,7 @@
 #include "commands.h"
 #include <Arduino.h>
 #include <Preferences.h>
+#include <Wire.h>
 #include "config.h"
 #include "distance.h"
 #include "drivemode.h"
@@ -61,6 +62,7 @@ void help() {
       "  cal <speed> <ms> <in>   calibrate: you drove <speed>% for <ms> and it went <in> inches\n"
       "  odo [reset]             distance travelled estimate\n"
       "  dist                    distance ahead from the VL53L0X\n"
+      "  i2c                     scan the I2C bus (0x23/0x5C = BH1750s, 0x29 = VL53L0X)\n"
       "  buf [inches]            show/set the clearance kept from obstacles (saved)\n"
       "  explore                 drive around, backing up and turning to avoid obstacles\n"
       "  seek                    find the brightest spot (to recharge), then stop\n"
@@ -135,8 +137,21 @@ void handle(const char* line, uint32_t now) {
   }
   // Any other command (manual driving etc.) takes over from explore/sleep.
   if (drivemode::current() != drivemode::Mode::Stop && strcmp(cmd, "?") && strcmp(cmd, "dist") &&
-      strcmp(cmd, "buf") && strcmp(cmd, "odo")) {
+      strcmp(cmd, "buf") && strcmp(cmd, "i2c") && strcmp(cmd, "odo")) {
     drivemode::set(drivemode::Mode::Stop, now);
+  }
+  if (!strcmp(cmd, "i2c")) {
+    if (n != 0) { netlog::out.println("err: usage: i2c"); return; }
+    int found = 0;
+    for (uint8_t a = 0x08; a < 0x78; a++) {
+      Wire.beginTransmission(a);
+      if (Wire.endTransmission() == 0) {
+        netlog::out.printf("i2c: found 0x%02X\n", a);
+        found++;
+      }
+    }
+    netlog::out.printf("i2c: %d device(s)\n", found);
+    return;
   }
   if (!strcmp(cmd, "buf")) {
     float in;
