@@ -44,6 +44,11 @@ constexpr uint32_t EXPLORE_TURN_MIN_MS = 300;   // always turn at least this lon
 constexpr uint32_t EXPLORE_TURN_MAX_MS = 5000;  // give up (stop) if still blocked after this long turning
 constexpr float EXPLORE_CLEAR_MARGIN_IN = 6.0f; // turn until clearance exceeds buffer + this
 
+// Stuck detection (see drivemode.cpp): driving forward with the distance reading changing by less than
+// STUCK_MIN_MM for STUCK_MS means the wheels are spinning without moving. Backs up and turns.
+constexpr uint32_t STUCK_MS = 2500;
+constexpr int STUCK_MIN_MM = 12;  // well above sensor noise; normal driving covers several inches in STUCK_MS
+
 // Motor driver (TB6612FNG), see docs/hardware.md. Left = A channel, right = B channel.
 constexpr int PIN_MOT_AIN1 = 16;  // D6
 constexpr int PIN_MOT_AIN2 = 17;  // D7

@@ -29,6 +29,11 @@ float arc = SEEK_ARC;
 float bestAvg = 0, scanBest = 0;  // lux
 uint32_t bestAt = 0, lastLogMs = 0;
 
+// Stuck detection: distance reading when the current "no progress" window started.
+bool stuckInit = false;
+int stuckRefMm = 0;
+uint32_t stuckAt = 0;
+
 void log(const char* fmt, float a = 0) {
   char ts[16];
   netlog::stamp(ts, sizeof(ts));
@@ -49,6 +54,7 @@ void applyPhase() {
 void enter(Phase p, uint32_t now) {
   phase = p;
   phaseStart = now;
+  stuckInit = false;
   applyPhase();
 }
 
@@ -142,6 +148,7 @@ void loop(uint32_t now) {
   failures = 0;
   if (paused) {
     paused = false;
+    stuckInit = false;  // motors were stopped, restart the no-progress window
     applyPhase();
   }
 
@@ -170,6 +177,17 @@ void loop(uint32_t now) {
     case Phase::Forward:
       if (clear < distance::bufferIn()) {
         log("obstacle, %.1f in clear, backing up", clear);
+        enter(Phase::Backup, now);
+        break;
+      }
+      // Stuck: wheels driving but the distance ahead isn't changing. An out-of-range reading can't show
+      // progress, so it just restarts the window.
+      if (mm == distance::OUT_OF_RANGE_MM || !stuckInit || abs(mm - stuckRefMm) >= STUCK_MIN_MM) {
+        stuckInit = mm != distance::OUT_OF_RANGE_MM;
+        stuckRefMm = mm;
+        stuckAt = now;
+      } else if (now - stuckAt >= STUCK_MS) {
+        log("stuck, no progress for %.1f s, backing up", (now - stuckAt) / 1000.0f);
         enter(Phase::Backup, now);
         break;
       }

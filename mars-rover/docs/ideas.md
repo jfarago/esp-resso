@@ -34,7 +34,7 @@ Where the project stands (as of the `seek` / `arc` commits), then what could com
 
 - **`nc` port has no authentication.** Anyone on the Wi-Fi can drive the rover. OTA is password protected, the command port is not. Options: a shared token as a first line (`auth <token>`), or only accept drive commands from the first client.
 - **Explore and seek keep running after `nc` disconnects.** Intentional for autonomy, but there is no cap. Consider a max run time, or stopping on low battery, so a forgotten `explore` can't run the battery flat.
-- **Stuck detection.** With no encoders, a stuck rover keeps spinning wheels. Use "clearance didn't change after N seconds of driving forward" (or an IMU, see below) to trigger a backup-and-turn.
+- [x] **Stuck detection.** With no encoders, a stuck rover keeps spinning wheels. Use "clearance didn't change after N seconds of driving forward" (or an IMU, see below) to trigger a backup-and-turn.
 - **Blind reverse.** Backup is a fixed 0.6 s with nothing watching behind. A rear sensor, or a shorter reverse, would reduce the risk. Fine for now on an open floor.
 - **Low-battery cutoff for motors.** Refuse to drive (or force seek / stop) below a voltage so a sagging battery doesn't brown out the ESP32 mid-move. Needs real measurements under motor load, since voltage drops when the motors start.
 - **Single forward sensor.** The VL53L0X sees a narrow cone straight ahead, so it misses table edges, thin chair legs, and anything off to the side. Worth knowing before trusting explore around stairs or ledges.
