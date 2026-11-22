@@ -51,8 +51,8 @@ Where the project stands (as of the `seek` / `arc` commits), then what could com
 
 ## Navigation and behavior
 
-- **Smarter exploring.** Wall following, a spiral or coverage pattern, or bias away from where it just turned. Random turns can get it stuck oscillating between two obstacles.
-- **Choose turn direction by clearance.** Spin toward the side with more space instead of randomly. A few degrees of scan would tell it which.
+- [x] **Smarter exploring.** Wall following, a spiral or coverage pattern, or bias away from where it just turned. Random turns can get it stuck oscillating between two obstacles. (Done: turns alternate away from the last one when clearance is a toss-up, and three obstacles within 6 s trigger a long escape turn. Wall following and coverage patterns not done.)
+- [x] **Choose turn direction by clearance.** Spin toward the side with more space instead of randomly. A few degrees of scan would tell it which. (Done: after backing up it sweeps right then left, `EXPLORE_LOOK_MS`, and turns toward the side with more clearance.)
 - **Scripted routines over `nc`.** A small command sequence (`run f 50 1000; m 70 -70 400; ...`) or named routines.
 - **Home and return.** Remember where the brightest spot was and drive back to it with the odometer, accepting the drift.
 
