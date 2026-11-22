@@ -2,7 +2,7 @@
 
 Monorepo of ESP32 projects. Each top-level folder is a self-contained PlatformIO project with its own `platformio.ini`, `.gitignore`, and (where present) its own `CLAUDE.md` — read the project's `CLAUDE.md` before working in it.
 
-Projects: `ro-system-monitor`, `mars-rover`, `word-clock`.
+Projects: `ro-system-monitor`, `mars-rover`, `word-clock`, `sensor-bench`.
 
 ## Shared code
 
@@ -19,7 +19,7 @@ Use [Conventional Commits](https://www.conventionalcommits.org/) with the **proj
 ```
 
 - **type**: `feat`, `fix`, `docs`, `refactor`, `perf`, `test`, `build`, `chore`, `style`
-- **scope**: the project folder name — `ro-system-monitor`, `mars-rover`, or `word-clock`
+- **scope**: the project folder name — `ro-system-monitor`, `mars-rover`, `word-clock`, or `sensor-bench`
 - Summary: imperative mood ("add", not "added"), lowercase, no trailing period, ~72 chars max
 - Use scope `repo` for changes to root files (README, root `.gitignore`, this file, CI)
 - Breaking changes: add `!` after the scope (`feat(word-clock)!: ...`) and a `BREAKING CHANGE:` footer
