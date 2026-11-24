@@ -12,8 +12,8 @@ Shows bus voltage (V), current (mA), power (mW) and cumulative charge (mAh) on t
 |---|---|
 | VIN | 3V3 |
 | GND | GND |
-| SDA | GPIO11 |
-| SCL | GPIO10 |
+| SDA | GPIO43 (Qwiic connector) |
+| SCL | GPIO44 (Qwiic connector) |
 | VIN+ / VIN- | in series with the load, on the high or low side (max 85 V) |
 
 The shunt is 15 mOhm / 10 A. For small loads (< ~2.7 A) call `ina.setADCRange(1)` after `setShunt()` for 4x finer resolution.

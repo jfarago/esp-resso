@@ -6,9 +6,10 @@ constexpr int PIN_BACKLIGHT = 38;
 constexpr int PIN_BUTTON = 14;    // right-hand side button, active low (BOOT = GPIO0 is the other)
 
 // ---- I2C to INA228 ----
-// Not GPIO16/17/18/21: those are used by the touch controller on the touch version.
-constexpr int PIN_SDA = 11;
-constexpr int PIN_SCL = 10;
+// The board's 4-pin Qwiic/STEMMA QT connector: SDA = GPIO43, SCL = GPIO44.
+// (GPIO17/18 are the touch controller's separate I2C bus on the touch version.)
+constexpr int PIN_SDA = 43;
+constexpr int PIN_SCL = 44;
 constexpr uint32_t I2C_FREQ = 400000;
 constexpr uint8_t INA228_ADDR = 0x40;  // A0/A1 open
 

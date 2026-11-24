@@ -95,6 +95,19 @@ static void showMessage(const char* msg, uint16_t color) {
   tft.setTextDatum(TL_DATUM);
 }
 
+// Log every responding I2C address so wiring problems are visible over serial.
+static void scanI2c() {
+  int found = 0;
+  for (uint8_t a = 1; a < 127; a++) {
+    Wire.beginTransmission(a);
+    if (Wire.endTransmission() == 0) {
+      Serial.printf("I2C device at 0x%02X\n", a);
+      found++;
+    }
+  }
+  if (!found) Serial.println("I2C scan: no devices (check wiring/pins)");
+}
+
 static bool initIna() {
   if (!ina.begin(INA228_ADDR, &Wire)) return false;
   ina.setShunt(SHUNT_OHMS, MAX_CURRENT_A);
@@ -163,7 +176,8 @@ void setup() {
     drawStatic();
   } else {
     showMessage("INA228 not found", TFT_RED);
-    Serial.println("INA228 not found");
+    Serial.printf("INA228 not found at 0x%02X (SDA=%d SCL=%d)\n", INA228_ADDR, PIN_SDA, PIN_SCL);
+    scanI2c();
   }
 }
 

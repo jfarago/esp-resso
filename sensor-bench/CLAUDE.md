@@ -8,7 +8,7 @@ Test bench for assorted sensors on a LilyGO T-Display S3 (ESP32-S3, 1.9" ST7789 
 | GPIO15 | PIN_POWER_ON, must be HIGH for display/battery operation |
 | GPIO38 | Backlight |
 | GPIO14 | Front button (active low): hold 1.5 s to clear mAh. GPIO0 is the other button (BOOT, avoid) |
-| GPIO11 / GPIO10 | I2C SDA / SCL to INA228 (header pins; GPIO16/17/18/21 are the touch controller) |
+| GPIO43 / GPIO44 | I2C SDA / SCL to INA228 via the board's Qwiic/STEMMA QT connector (GPIO17/18 are the touch controller's own bus) |
 | 5/6/7/8/9, 39-42, 45-48 | 8-bit parallel display bus (TFT_eSPI, set via `build_flags`) |
 
 ## Commands
