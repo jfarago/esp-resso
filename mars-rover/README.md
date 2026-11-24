@@ -23,7 +23,7 @@ Connect with `nc mars-rover.local 23`. The same connection streams the logs and 
 | `m <left> <right> <ms>` | `m 70 -70 400` | Both sides, signed -100..100 (turns and pivots) |
 | `d <speed> <inches>` | `d 50 20` | Drive a distance using the calibration (negative inches = backward) |
 | `cal <speed> <ms> <inches>` | `cal 50 7400 20` | Calibrate from a measured run; saved to flash |
-| `odo [reset]` | `odo` | Show or zero the estimated distance travelled |
+| `odo [reset]` | `odo` | Show or zero the estimated distance travelled. Saved to flash when a move ends, so it survives reboots and re-flashing; only `odo reset` (or a full flash erase) clears it |
 | `dist` | `dist` | Read the VL53L0X: distance, clearance (reading minus `DIST_SENSOR_OFFSET_MM`) and buffer |
 | `arc [0-2]` | `arc 1.2` | Show or set how sharply `seek` steers toward the brighter side: 0 = none, 1 = inner wheels stop, 2 = pivot in place (default 0.7, saved to flash) |
 | `i2c` | `i2c` | Scan the I2C bus and list responding addresses (for wiring checks) |
@@ -32,6 +32,7 @@ Connect with `nc mars-rover.local 23`. The same connection streams the logs and 
 | `seek` | `seek` | Find the brightest spot to recharge: spin to scan with the two BH1750s, face the brightest direction, drive toward the brighter side (avoiding obstacles), and stop when brightness stops improving. Also starts by itself if the battery drops below 3.5 V while exploring |
 | `stop` (or `s`) | `stop` | Stop immediately and leave explore/sleep |
 | `sleep` | `sleep` | Light sleep, even with `nc` connected; wakes on Wi-Fi traffic. Send `stop`, `explore` or a move to wake |
+| `deepsleep <minutes>` | `deepsleep 30` | Deep sleep for 0.1-60 minutes, then reboot. Wi-Fi is off meanwhile, so it can't be woken remotely (power-cycle to cut it short). The boot motor self-test is skipped after waking |
 | `?` | `?` | List commands and show motor state |
 
 Explore keeps driving if `nc` disconnects, so reconnect and send `stop`; it also stops itself if the sensor fails repeatedly or the rover is boxed in. Tuning (speeds, backup and turn times) is in `include/config.h`.
