@@ -15,6 +15,9 @@ void loop(uint32_t now, bool busy);
 // for POWER_IDLE_MS. Wi-Fi traffic still wakes it long enough to handle a command.
 void setForced(bool forced);
 
+// Deep sleep for `ms` (timer wake only), then the chip reboots. Wi-Fi is off meanwhile; does not return.
+[[noreturn]] void deepSleep(uint32_t ms);
+
 // True once the rover has been idle long enough that it is cycling through light sleep.
 bool sleeping();
 

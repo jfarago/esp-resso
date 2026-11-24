@@ -37,6 +37,15 @@ uint32_t takeWifiWakes() {
   return n;
 }
 
+void deepSleep(uint32_t ms) {
+  netlog::loop();
+  delay(300);  // let the reply reach the nc client
+  Serial.flush();
+  WiFi.disconnect(true);
+  esp_sleep_enable_timer_wakeup((uint64_t)ms * 1000);
+  esp_deep_sleep_start();
+}
+
 void loop(uint32_t now, bool busy) {
   // Without Wi-Fi there is nothing to wake for (and the reconnect timer needs the CPU), so stay awake.
   uint32_t idleMs = forced ? POWER_WAKE_WINDOW_MS : POWER_IDLE_MS;

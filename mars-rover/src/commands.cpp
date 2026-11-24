@@ -8,6 +8,7 @@
 #include "light.h"
 #include "motors.h"
 #include "netlog.h"
+#include "power.h"
 
 namespace commands {
 
@@ -44,11 +45,20 @@ void startMove(uint32_t now, float l, float r, uint32_t ms) {
   moving = true;
 }
 
+// Odometer lives in NVS ("rover" namespace), which a normal flash does not erase. Saved when a move ends.
+void saveOdo() {
+  prefs.putFloat("odoL", odoL);
+  prefs.putFloat("odoR", odoR);
+  prefs.putFloat("odoT", odoTotal);
+}
+
 void stopMove() {
+  bool was = moving;
   account(millis());
   motors::stop();
   curL = curR = 0;
   moving = false;
+  if (was) saveOdo();
 }
 
 void help() {
@@ -70,6 +80,7 @@ void help() {
       "  buf [inches]            show/set the clearance kept from obstacles (saved)\n"
       "  explore                 drive around, backing up and turning to avoid obstacles\n"
       "  seek                    find the brightest spot (to recharge), then stop\n"
+      "  deepsleep <minutes>     deep sleep (max 60), then reboot; unreachable until it wakes\n"
       "  stop (or s)             stop motors, leave explore/sleep\n"
       "  sleep                   light sleep until stop/explore/a move command\n"
       "  ?                       this list and motor state");
@@ -131,6 +142,17 @@ void handle(const char* line, uint32_t now) {
     if (drivemode::set(drivemode::Mode::Seek, now)) netlog::out.println("ok seek");
     else netlog::out.println("err: need the VL53L0X and both BH1750 sensors (check wiring)");
     return;
+  }
+  if (!strcmp(cmd, "deepsleep")) {
+    float min;
+    if (n != 1 || !parseFloat(args[0], min) || min < 0.1f || min > 60) {
+      netlog::out.println("err: usage: deepsleep <minutes 0.1-60>");
+      return;
+    }
+    stopMove();
+    drivemode::set(drivemode::Mode::Stop, now);
+    netlog::out.printf("ok deepsleep %.1f min (offline until it reboots)\n", min);
+    power::deepSleep((uint32_t)(min * 60000.0f));
   }
   if (!strcmp(cmd, "sleep")) {
     if (n != 0) { netlog::out.println("err: usage: sleep"); return; }
@@ -225,6 +247,7 @@ void handle(const char* line, uint32_t now) {
     if (n == 1 && !strcmp(args[0], "reset")) {
       account(now);
       odoL = odoR = odoTotal = 0;
+      saveOdo();
       netlog::out.println("ok odo reset");
     } else if (n != 0) {
       netlog::out.println("err: usage: odo [reset]");
@@ -307,6 +330,9 @@ void begin() {
   ipsFull = prefs.getFloat("ips", INCHES_PER_SEC_FULL);
   distance::setBufferIn(prefs.getFloat("buf", DIST_BUFFER_IN));
   drivemode::setSeekArc(prefs.getFloat("arc", SEEK_ARC));
+  odoL = prefs.getFloat("odoL", 0);
+  odoR = prefs.getFloat("odoR", 0);
+  odoTotal = prefs.getFloat("odoT", 0);
   netlog::out.printf("[commands] buffer %.2f in\n", distance::bufferIn());
   netlog::out.printf("[commands] calibration %.2f in/s at 100%%\n", ipsFull);
 }

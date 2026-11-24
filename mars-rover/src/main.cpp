@@ -11,6 +11,7 @@
 #include "netlog.h"
 #include "ota.h"
 #include "power.h"
+#include <esp_sleep.h>
 
 // XIAO ESP32-C6 user LED (GPIO15) is active-low; LED_BUILTIN comes from the board variant.
 static const uint8_t LED_ON = LOW;
@@ -97,7 +98,7 @@ static bool selfTestDone = false;
 static void motorSelfTest(uint32_t now) {
   static enum { Pending, Running, Done } state = Pending;
   static uint32_t startMs = 0;
-  if (state == Done) return;
+  if (state == Done || selfTestDone) return;
   if (state == Pending) {
     startMs = now;
     motors::set(MOTOR_TEST_POWER, MOTOR_TEST_POWER);
@@ -114,6 +115,8 @@ static void motorSelfTest(uint32_t now) {
 
 void setup() {
   Serial.begin(115200);
+  // Woke from deep sleep (timer): skip the motor self-test. Power-on and flash resets still run it.
+  if (esp_sleep_get_wakeup_cause() == ESP_SLEEP_WAKEUP_TIMER) selfTestDone = true;
   pinMode(LED_BUILTIN, OUTPUT);
   digitalWrite(LED_BUILTIN, LED_OFF);
 
@@ -147,8 +150,6 @@ void loop() {
   updateMode();
   logBattery(now);
   motorSelfTest(now);
-  // Non-blocking 1 Hz blink so OTA stays responsive; off while idling in light sleep.
-  digitalWrite(LED_BUILTIN, !power::sleeping() && (now / 500) % 2 == 0 ? LED_ON : LED_OFF);
   bool sleepMode = drivemode::current() == drivemode::Mode::Sleep;
   power::loop(now, (netlog::clientConnected() && !sleepMode) || commands::isMoving() ||
                        drivemode::active() || !selfTestDone);
