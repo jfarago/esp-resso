@@ -121,4 +121,4 @@ constexpr size_t LOG_BACKLOG_BYTES = 32768;  // history replayed to a new client
 // stays up POWER_WAKE_WINDOW_MS so an incoming nc connection can be accepted.
 constexpr uint32_t POWER_IDLE_MS = 30000;
 constexpr uint32_t POWER_SLEEP_TIMER_MS = 300000;
-constexpr uint32_t POWER_WAKE_WINDOW_MS = 100;
+constexpr uint32_t POWER_WAKE_WINDOW_MS = 40;
