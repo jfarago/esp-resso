@@ -104,8 +104,9 @@ constexpr float VBAT_PRESENT_MIN_V = 2.0f;
 // Power modes (see docs/project-overview.md section 6). Hysteresis: Drive <-> Sun-seek uses 3.5/3.6 V.
 constexpr float MODE_DRIVE_MIN_V = 3.6f;       // Sun-seek -> Drive at or above this
 constexpr float MODE_SEEK_BELOW_V = 3.5f;      // Drive -> Sun-seek below this
-constexpr float MODE_SLEEP_BELOW_V = 3.3f;     // placeholder: any mode -> Deep-sleep charge below this
-constexpr float MODE_SLEEP_EXIT_V = 3.4f;      // placeholder: Deep-sleep -> Sun-seek at or above this
+constexpr float MODE_SLEEP_BELOW_V = 3.3f;     // any mode -> Deep-sleep charge below this (protects the cell)
+constexpr float MODE_SLEEP_EXIT_V = 3.4f;      // Deep-sleep -> Sun-seek at or above this
+constexpr uint32_t LOWBATT_SLEEP_MS = 3600000;  // deep-sleep charge: sleep 1 hour, wake, re-check the battery
 
 // Wi-Fi / OTA (credentials and OTA password live in secrets.h)
 #define MDNS_HOSTNAME "mars-rover"

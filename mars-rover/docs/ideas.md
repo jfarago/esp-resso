@@ -17,7 +17,7 @@ Where the project stands (as of the `seek` / `arc` commits), then what could com
 
 **Stubbed or not done:**
 
-- The battery power modes in `main.cpp` are mostly stubs. Deep-sleep-charge only logs, and its thresholds (3.3 / 3.4 V) are placeholders.
+- The battery power modes in `main.cpp` are mostly stubs. Deep-sleep-charge is real (below 3.3 V, wake every hour, resume at 3.4 V), but Drive and Sun-seek only log.
 - `docs/hardware.md` still has TBD sections: parts list, specs, and the power wiring.
 - Nothing has been tested outdoors or in real sun. Seek has only been tuned by reasoning, not by driving.
 

@@ -37,13 +37,17 @@ uint32_t takeWifiWakes() {
   return n;
 }
 
+void deepSleepQuiet(uint32_t ms) {
+  esp_sleep_enable_timer_wakeup((uint64_t)ms * 1000);
+  esp_deep_sleep_start();
+}
+
 void deepSleep(uint32_t ms) {
   netlog::loop();
   delay(300);  // let the reply reach the nc client
   Serial.flush();
   WiFi.disconnect(true);
-  esp_sleep_enable_timer_wakeup((uint64_t)ms * 1000);
-  esp_deep_sleep_start();
+  deepSleepQuiet(ms);
 }
 
 void loop(uint32_t now, bool busy) {

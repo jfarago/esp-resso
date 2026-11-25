@@ -37,6 +37,8 @@ Connect with `nc mars-rover.local 23`. The same connection streams the logs and 
 
 Explore keeps driving if `nc` disconnects, so reconnect and send `stop`; it also stops itself if the sensor fails repeatedly or the rover is boxed in. Tuning (speeds, backup and turn times) is in `include/config.h`.
 
+**Low-battery protection:** below 3.3 V the rover stops the motors and deep sleeps (Wi-Fi off), waking every hour to re-check the battery before bringing anything up. It resumes once the battery reaches 3.4 V (`MODE_SLEEP_*` and `LOWBATT_SLEEP_MS` in `include/config.h`). Use a USB flash if you need to reach it sooner.
+
 Every manual move is timed and stops itself. A new command replaces the current move. Durations are capped at 10 s (`MOVE_MAX_MS` in `include/config.h`), and the motors stop if the connection drops. Each command replies with `ok ...` or `err: ...`.
 
 Distance is an open-loop estimate (power x time x calibration, assumed linear in power), so it drifts from real distance. The default calibration is 5.41 in/s at 100% power; recalibrate with `cal` after measuring a real run.

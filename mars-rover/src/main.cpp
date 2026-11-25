@@ -30,6 +30,9 @@ static const char* modeName(Mode m) {
 
 static Mode mode = Mode::Unknown;
 
+// Survives deep sleep (RTC memory): the last sleep was the low-battery one, so wake only above EXIT_V.
+RTC_DATA_ATTR static bool lowBattSleep = false;
+
 // Pick the next mode from battery voltage, with hysteresis so it doesn't flap near a threshold.
 static Mode nextMode(Mode cur, float v) {
   if (v < MODE_SLEEP_BELOW_V) return Mode::DeepSleepCharge;
@@ -60,7 +63,12 @@ static void onModeEnter(Mode m) {
         netlog::out.println("[mode] battery low (send `seek` to find light)");
       }
       break;
-    case Mode::DeepSleepCharge: netlog::out.println("[mode] would stop motors and deep sleep, waking periodically to check battery"); break;
+    case Mode::DeepSleepCharge:
+      netlog::out.printf("[mode] battery critical (%.2f V), deep sleeping %lu min to charge\n", battery::volts(),
+                         (unsigned long)(LOWBATT_SLEEP_MS / 60000));
+      drivemode::set(drivemode::Mode::Stop, millis());  // also stops the motors
+      lowBattSleep = true;
+      power::deepSleep(LOWBATT_SLEEP_MS);
     default: break;
   }
 }
@@ -130,6 +138,18 @@ void setup() {
   bc.logMs = 0;  // main.cpp logs the battery itself (with a timestamp)
   bc.presentMinV = VBAT_PRESENT_MIN_V;
   battery::begin(bc);
+  // After a deep-sleep wake, check the battery before bringing up Wi-Fi or motors; if it is still low,
+  // go straight back to sleep. A low-battery sleep needs MODE_SLEEP_EXIT_V to resume; others only need
+  // to be above MODE_SLEEP_BELOW_V.
+  if (esp_sleep_get_wakeup_cause() == ESP_SLEEP_WAKEUP_TIMER) {
+    battery::update(millis());
+    float v = battery::volts();
+    if (battery::present() && v < (lowBattSleep ? MODE_SLEEP_EXIT_V : MODE_SLEEP_BELOW_V)) {
+      lowBattSleep = true;
+      power::deepSleepQuiet(LOWBATT_SLEEP_MS);
+    }
+    lowBattSleep = false;
+  }
   net::begin();
   power::begin();
   Wire.begin(PIN_I2C_SDA, PIN_I2C_SCL, I2C_HZ);
