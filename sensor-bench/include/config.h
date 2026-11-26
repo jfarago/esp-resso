@@ -20,5 +20,5 @@ constexpr float MAX_CURRENT_A = 10.0f;
 
 // ---- UI ----
 constexpr uint32_t CLEAR_HOLD_MS = 1500;      // hold button this long to zero mAh
-constexpr uint32_t DISPLAY_PERIOD_MS = 100;
+constexpr uint32_t DISPLAY_PERIOD_MS = 50;  // about one INA228 averaged result
 constexpr uint32_t SERIAL_PERIOD_MS = 1000;

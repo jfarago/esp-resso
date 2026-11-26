@@ -19,5 +19,5 @@ Test bench for assorted sensors on a LilyGO T-Display S3 (ESP32-S3, 1.9" ST7789 
 ## Rules
 - TFT_eSPI is configured only through `build_flags` in `platformio.ini` (`USER_SETUP_LOADED`); never edit the library's User_Setup.h.
 - INA228 (Adafruit #5832, 0x40, 15 mOhm shunt, 10 A): the Adafruit library has no charge API and returns mV/mA/mW (`readBusVoltage` is mV). mAh comes from the chip's hardware CHARGE accumulator, read raw in `readMah()`; its LSB depends on `MAX_CURRENT_A` in `config.h`, which must match `setShunt()`.
-- The accumulator lives in the INA228, so mAh survives an ESP32 reset but not a power loss to the INA228.
+- mAh and the elapsed timer are zeroed together in `resetMeasurement()` (boot, button hold, serial `r`); neither survives a reset. Always reset through it so they cover the same period.
 - Pins, shunt and timings live in `include/config.h` (no secrets, tracked).

@@ -1,5 +1,6 @@
 // T-Display S3 sensor bench: INA228 current monitor.
-// Shows bus voltage, current, power and cumulative mAh. Hold the front button to zero mAh.
+// Shows bus voltage, current, power, cumulative mAh and the time it covers.
+// Hold the front button to zero mAh and the timer.
 
 #include <Arduino.h>
 #include <Wire.h>
@@ -21,14 +22,17 @@ struct Row {
   const char* unit;
   uint16_t color;
 };
-static const Row ROWS[4] = {
+static constexpr int NUM_ROWS = 5;
+static constexpr int TIME_ROW = 4;
+static const Row ROWS[NUM_ROWS] = {
     {"Volts", "V", TFT_CYAN},
     {"Current", "mA", TFT_YELLOW},
     {"Power", "mW", TFT_ORANGE},
     {"Charge", "mAh", TFT_GREEN},
+    {"Time", "", TFT_WHITE},
 };
 
-static constexpr int ROW_H = 38;
+static constexpr int ROW_H = 30;
 static constexpr int UNIT_X = 318;       // unit text right edge
 static constexpr int VALUE_X = 266;      // value right edge
 static constexpr int VALUE_PAD = 140;    // value field width to erase
@@ -41,16 +45,24 @@ static bool pressed = false;
 static bool clearedThisPress = false;
 static uint32_t clearedAt = 0;
 
+// When the mAh accumulator was last zeroed (us; 64-bit so it never wraps).
+static int64_t monitorStartUs = 0;
+
+static void resetMeasurement() {
+  ina.resetAccumulators();
+  monitorStartUs = esp_timer_get_time();
+}
+
 static void drawStatic() {
   tft.fillScreen(COL_BG);
   tft.setTextDatum(TL_DATUM);
   tft.setTextPadding(0);
-  for (int i = 0; i < 4; i++) {
+  for (int i = 0; i < NUM_ROWS; i++) {
     tft.setTextColor(COL_LABEL, COL_BG);
-    tft.drawString(ROWS[i].label, 6, i * ROW_H + 6, 4);
+    tft.drawString(ROWS[i].label, 6, i * ROW_H + 3, 4);
     tft.setTextColor(ROWS[i].color, COL_BG);
     tft.setTextDatum(TR_DATUM);
-    tft.drawString(ROWS[i].unit, UNIT_X, i * ROW_H + 6, 4);
+    tft.drawString(ROWS[i].unit, UNIT_X, i * ROW_H + 3, 4);
     tft.setTextDatum(TL_DATUM);
   }
 }
@@ -59,7 +71,8 @@ static void drawValue(int row, const char* text) {
   tft.setTextColor(ROWS[row].color, COL_BG);
   tft.setTextDatum(TR_DATUM);
   tft.setTextPadding(VALUE_PAD);
-  tft.drawString(text, VALUE_X, row * ROW_H + 6, 4);
+  // The time has no unit, so it sits flush with the unit column's right edge.
+  tft.drawString(text, row == TIME_ROW ? UNIT_X : VALUE_X, row * ROW_H + 3, 4);
   tft.setTextPadding(0);
   tft.setTextDatum(TL_DATUM);
 }
@@ -115,7 +128,7 @@ static bool initIna() {
   ina.setAveragingCount(INA228_COUNT_16);
   ina.setVoltageConversionTime(INA228_TIME_1052_us);
   ina.setCurrentConversionTime(INA228_TIME_1052_us);
-  ina.resetAccumulators();
+  resetMeasurement();
   return true;
 }
 
@@ -135,7 +148,7 @@ static bool readMah(double& mah) {
 }
 
 static void clearMah() {
-  if (inaOk) ina.resetAccumulators();
+  if (inaOk) resetMeasurement();
   clearedAt = millis();
   Serial.println("mAh cleared");
 }
@@ -162,6 +175,7 @@ static float pollButton() {
 
 void setup() {
   Serial.begin(115200);
+  Serial.setTxTimeoutMs(0);  // never stall the display when no serial monitor is reading
   pinMode(PIN_POWER_ON, OUTPUT);
   digitalWrite(PIN_POWER_ON, HIGH);
   pinMode(PIN_BUTTON, INPUT_PULLUP);
@@ -219,11 +233,17 @@ void loop() {
     else snprintf(buf, sizeof(buf), "%.3f", mah);
     drawValue(3, buf);
 
+    uint32_t secs = (uint32_t)((esp_timer_get_time() - monitorStartUs) / 1000000);
+    char elapsed[16];
+    snprintf(elapsed, sizeof(elapsed), "%02lu:%02lu:%02lu", (unsigned long)(secs / 3600),
+             (unsigned long)(secs / 60 % 60), (unsigned long)(secs % 60));
+    drawValue(TIME_ROW, elapsed);
+
     drawBottom(hold, clearedAt && now - clearedAt < 1500);
 
     if (now - lastSerial >= SERIAL_PERIOD_MS) {
       lastSerial = now;
-      Serial.printf("V=%.3f V  I=%.2f mA  P=%.1f mW  Q=%.3f mAh\n", v, ma, mw, mah);
+      Serial.printf("V=%.3f V  I=%.2f mA  P=%.1f mW  Q=%.3f mAh  t=%s\n", v, ma, mw, mah, elapsed);
     }
   }
 }

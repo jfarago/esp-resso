@@ -4,7 +4,7 @@ Test bench for sensors on a LilyGO T-Display S3 (ESP32-S3, 1.9" ST7789, 170x320)
 
 ## INA228 current monitor
 
-Shows bus voltage (V), current (mA), power (mW) and cumulative charge (mAh) on the display, and prints the same once a second over USB serial. mAh is integrated in hardware by the INA228, so it doesn't miss samples. **Hold the front button (GPIO14) for 1.5 s** to clear it; a red bar shows hold progress. Sending `r` over serial also clears it.
+Shows bus voltage (V), current (mA), power (mW), cumulative charge (mAh) and the elapsed monitoring time (HH:MM:SS) on the display, and prints the same once a second over USB serial. mAh is integrated in hardware by the INA228, so it doesn't miss samples. **Hold the front button (GPIO14) for 1.5 s** to clear mAh and restart the timer (both also restart on reboot); a red bar shows hold progress. Sending `r` over serial also clears it.
 
 ### Wiring (Adafruit INA228, #5832)
 
