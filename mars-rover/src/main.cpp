@@ -152,10 +152,7 @@ void setup() {
   }
   net::begin();
   power::begin();
-  power::peripheralsOn();
-  Wire.begin(PIN_I2C_SDA, PIN_I2C_SCL, I2C_HZ);
-  distance::begin();
-  light::begin();
+  power::sensorsWake();
   motors::begin();
   commands::begin();
 }

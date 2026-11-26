@@ -5,6 +5,9 @@
 #include <driver/gpio.h>
 #include <esp_sleep.h>
 #include "config.h"
+#include "distance.h"
+#include "drivemode.h"
+#include "light.h"
 #include "net.h"
 #include "netlog.h"
 
@@ -16,6 +19,7 @@ uint32_t lastActiveMs = 0;
 bool idle = false;
 bool forced = false;
 uint32_t wifiWakes = 0;
+bool sensorsPowered = false;
 
 }  // namespace
 
@@ -39,31 +43,43 @@ uint32_t takeWifiWakes() {
   return n;
 }
 
-void peripheralsOn() {
-  gpio_hold_dis((gpio_num_t)PIN_PERIPH_PWR);  // release the deep-sleep hold
-  pinMode(PIN_PERIPH_PWR, OUTPUT);
-  gpio_set_drive_capability((gpio_num_t)PIN_PERIPH_PWR, GPIO_DRIVE_CAP_3);
-  gpio_sleep_sel_dis((gpio_num_t)PIN_PERIPH_PWR);  // keep driving HIGH during light sleep
-  digitalWrite(PIN_PERIPH_PWR, HIGH);
-  delay(PERIPH_PWR_SETTLE_MS);
-}
-
 namespace {
 
-void peripheralsOff() {
+void sensorsOff() {
   // Let go of the I2C pins first so they can't feed the unpowered sensors.
   Wire.end();
   pinMode(PIN_I2C_SDA, INPUT);
   pinMode(PIN_I2C_SCL, INPUT);
   pinMode(PIN_PERIPH_PWR, OUTPUT);
   digitalWrite(PIN_PERIPH_PWR, LOW);
-  gpio_hold_en((gpio_num_t)PIN_PERIPH_PWR);
+  gpio_sleep_sel_dis((gpio_num_t)PIN_PERIPH_PWR);  // stay driven LOW during light sleep
+  gpio_hold_en((gpio_num_t)PIN_PERIPH_PWR);        // and through deep sleep
+  sensorsPowered = false;
 }
 
 }  // namespace
 
+void sensorsWake() {
+  if (sensorsPowered) {
+    if ((distance::ready() && light::ready()) || drivemode::active()) return;
+    sensorsOff();
+    delay(PERIPH_PWR_SETTLE_MS);
+  }
+  gpio_hold_dis((gpio_num_t)PIN_PERIPH_PWR);
+  pinMode(PIN_PERIPH_PWR, OUTPUT);
+  gpio_set_drive_capability((gpio_num_t)PIN_PERIPH_PWR, GPIO_DRIVE_CAP_3);
+  gpio_sleep_sel_dis((gpio_num_t)PIN_PERIPH_PWR);  // keep driving HIGH during light sleep
+  digitalWrite(PIN_PERIPH_PWR, HIGH);
+  delay(PERIPH_PWR_SETTLE_MS);
+  sensorsPowered = true;
+  Wire.begin(PIN_I2C_SDA, PIN_I2C_SCL, I2C_HZ);
+  distance::begin();
+  light::begin();
+  delay(LIGHT_FIRST_READ_MS);  // a BH1750 reads 0 until its first measurement finishes
+}
+
 void deepSleepQuiet(uint32_t ms) {
-  peripheralsOff();
+  sensorsOff();
   esp_sleep_enable_timer_wakeup((uint64_t)ms * 1000);
   esp_deep_sleep_start();
 }
@@ -97,6 +113,8 @@ void loop(uint32_t now, bool busy) {
     netlog::out.printf("%s [power] %s, light sleep (wake on Wi-Fi or every %lu s)\n", ts,
                        forced ? "sleep mode" : "idle", (unsigned long)(POWER_SLEEP_TIMER_MS / 1000));
   }
+
+  if (sensorsPowered) sensorsOff();  // stay off across wakes; sensorsWake() restores them on demand
 
   Serial.flush();
   esp_sleep_enable_timer_wakeup((uint64_t)POWER_SLEEP_TIMER_MS * 1000);

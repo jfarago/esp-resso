@@ -21,9 +21,10 @@ void setForced(bool forced);
 // Same, but touches nothing else (no Wi-Fi/log flush): for use before net::begin() at boot.
 [[noreturn]] void deepSleepQuiet(uint32_t ms);
 
-// Switches PIN_PERIPH_PWR on and waits for the parts to start. Call before Wire/sensor/motor setup.
-// Both deep sleep functions switch it off again.
-void peripheralsOn();
+// Powers the sensors (PIN_PERIPH_PWR) and sets up I2C and both sensor drivers. Call before using any
+// of them: at boot, and again later because light and deep sleep switch them off. Does nothing if they
+// are already up; if a sensor failed to start, power-cycles and retries (unless the rover is driving).
+void sensorsWake();
 
 // True once the rover has been idle long enough that it is cycling through light sleep.
 bool sleeping();

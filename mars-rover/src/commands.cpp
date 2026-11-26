@@ -168,6 +168,7 @@ void handle(const char* line, uint32_t now) {
     drivemode::set(drivemode::Mode::Stop, now);
   }
   if (!strcmp(cmd, "i2c")) {
+    power::sensorsWake();
     if (n != 0) { netlog::out.println("err: usage: i2c"); return; }
     int found = 0;
     for (uint8_t a = 0x08; a < 0x78; a++) {
@@ -181,6 +182,7 @@ void handle(const char* line, uint32_t now) {
     return;
   }
   if (!strcmp(cmd, "lux")) {
+    power::sensorsWake();
     if (n != 0) { netlog::out.println("err: usage: lux"); return; }
     float l, r;
     if (!light::read(l, r)) { netlog::out.println("err: BH1750 not ready or read failed (try i2c)"); return; }
@@ -234,6 +236,7 @@ void handle(const char* line, uint32_t now) {
   }
 
   if (!strcmp(cmd, "dist")) {
+    power::sensorsWake();
     if (n != 0) { netlog::out.println("err: usage: dist"); return; }
     if (!distance::ready()) { netlog::out.println("err: VL53L0X not found (check wiring)"); return; }
     int mm = distance::readMm();

@@ -111,6 +111,7 @@ void setSeekArc(float a) { arc = a; }
 bool active() { return mode == Mode::Explore || mode == Mode::Seek; }
 
 bool set(Mode m, uint32_t now) {
+  if ((m == Mode::Explore || m == Mode::Seek) && m != mode) power::sensorsWake();
   if ((m == Mode::Explore || m == Mode::Seek) && !distance::ready()) return false;
   if (m == Mode::Seek && !light::ready()) return false;
   if (m == mode) return true;

@@ -5,10 +5,12 @@
 // Pins (XIAO ESP32-C6)
 constexpr int PIN_VBAT = 6;  // battery divider midpoint, GPIO6 (MTCK pad on the back), ADC1_CH6
 
-// Switched 3.3 V for the sensors (BH1750s, right ADDR, VL53L0X): HIGH = on. Held LOW through deep sleep.
+// Switched 3.3 V for the sensors (BH1750s, right ADDR, VL53L0X): HIGH = on. LOW in light and deep sleep.
 // Total load must stay within what drives it (see docs/hardware.md).
 constexpr int PIN_PERIPH_PWR = 1;  // D1
 constexpr uint32_t PERIPH_PWR_SETTLE_MS = 10;  // wait after power-on before talking to the sensors
+
+constexpr uint32_t LIGHT_FIRST_READ_MS = 180;  // BH1750 high-resolution measurement, worst case
 
 // I2C bus (default Wire pins on the XIAO C6), shared by the BH1750 light sensors and the VL53L0X.
 constexpr int PIN_I2C_SDA = 22;  // D4
@@ -127,4 +129,4 @@ constexpr size_t LOG_BACKLOG_BYTES = 32768;  // history replayed to a new client
 // stays up POWER_WAKE_WINDOW_MS so an incoming nc connection can be accepted.
 constexpr uint32_t POWER_IDLE_MS = 30000;
 constexpr uint32_t POWER_SLEEP_TIMER_MS = 300000;
-constexpr uint32_t POWER_WAKE_WINDOW_MS = 40;
+constexpr uint32_t POWER_WAKE_WINDOW_MS = 100;
