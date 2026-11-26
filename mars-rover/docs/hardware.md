@@ -65,14 +65,18 @@ See [project-overview.md](project-overview.md) for buying notes.
 solar panel (6 V) -> CN3065 SOLAR IN
 CN3065 BAT+/BAT- <-> Li-ion cell
 cell BAT+ -> power switch -> boost module VIN   (motor current bypasses the CN3065 LOAD pin)
-boost output (5.2-5.5 V) -> TB6612 VM (+ bulk cap) and XIAO 5V
-XIAO 3V3 -> TB6612 VCC, BH1750 x2, VL53L0X
+boost output (5.2-5.5 V) -> TB6612 VM (+ bulk cap)
+cell -> XIAO (connected directly to the battery, not through the booster)
+XIAO 3V3 -> TB6612 VCC
+XIAO D1 (switched) -> BH1750 x2 (and right ADDR), VL53L0X
 battery + -> 220k -> GPIO6 -> 220k -> GND  (100 nF from GPIO6 to GND)
 ```
 
 - **Rails:** battery 3.0-4.2 V, motor rail 5.2-5.5 V, logic 3.3 V from the XIAO regulator.
 - **Common ground:** battery -, CN3065, boost, TB6612, XIAO and all sensors share `GND`.
 - **Brownouts:** the bulk cap across `VM`/`GND` keeps motor start-up from resetting the ESP32.
+
+Current draw and battery life: [power.md](power.md).
 
 ## Cautions
 

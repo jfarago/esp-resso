@@ -2,6 +2,8 @@
 
 ESP32-C6 (Seeed XIAO) Mars rover. Firmware drives a TB6612FNG motor driver, monitors the battery, and logs and accepts drive commands over Wi-Fi (`nc mars-rover.local 23`).
 
+Current draw and estimated battery life: [docs/power.md](docs/power.md).
+
 ## Build & flash
 ```
 pio run              # build
