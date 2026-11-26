@@ -1,6 +1,8 @@
 #include "power.h"
 #include <Arduino.h>
 #include <WiFi.h>
+#include <Wire.h>
+#include <driver/gpio.h>
 #include <esp_sleep.h>
 #include "config.h"
 #include "net.h"
@@ -37,7 +39,31 @@ uint32_t takeWifiWakes() {
   return n;
 }
 
+void peripheralsOn() {
+  gpio_hold_dis((gpio_num_t)PIN_PERIPH_PWR);  // release the deep-sleep hold
+  pinMode(PIN_PERIPH_PWR, OUTPUT);
+  gpio_set_drive_capability((gpio_num_t)PIN_PERIPH_PWR, GPIO_DRIVE_CAP_3);
+  gpio_sleep_sel_dis((gpio_num_t)PIN_PERIPH_PWR);  // keep driving HIGH during light sleep
+  digitalWrite(PIN_PERIPH_PWR, HIGH);
+  delay(PERIPH_PWR_SETTLE_MS);
+}
+
+namespace {
+
+void peripheralsOff() {
+  // Let go of the I2C pins first so they can't feed the unpowered sensors.
+  Wire.end();
+  pinMode(PIN_I2C_SDA, INPUT);
+  pinMode(PIN_I2C_SCL, INPUT);
+  pinMode(PIN_PERIPH_PWR, OUTPUT);
+  digitalWrite(PIN_PERIPH_PWR, LOW);
+  gpio_hold_en((gpio_num_t)PIN_PERIPH_PWR);
+}
+
+}  // namespace
+
 void deepSleepQuiet(uint32_t ms) {
+  peripheralsOff();
   esp_sleep_enable_timer_wakeup((uint64_t)ms * 1000);
   esp_deep_sleep_start();
 }
